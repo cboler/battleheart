@@ -202,32 +202,57 @@
   font-size: 0.9rem;
   font-weight: 800;
   color: #e6d5b8;
-  background: linear-gradient(180deg, #382416 0%, #21140b 100%);
-  border: 2px solid #6b4c2b;
+  background: linear-gradient(180deg, #3f2818 0%, #21140b 100%);
+  border: 2px solid #7c5832;
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-  transition: all 0.15s ease;
+  box-shadow:
+    0 3px 0 #120a05,
+    0 6px 12px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 235, 180, 0.18);
+  transition:
+    transform 0.14s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.14s ease,
+    border-color 0.14s ease;
 
   &:hover {
-    border-color: #ca8a04;
+    border-color: #eab308;
     color: #ffffff;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(2px);
   }
 
   &.active {
     background: linear-gradient(180deg, #fde047 0%, #ca8a04 100%);
     color: #1c1008;
     border-color: #fef08a;
-    box-shadow: 0 0 16px rgba(250, 204, 21, 0.45);
+    box-shadow:
+      0 3px 0 #713f12,
+      0 0 18px rgba(250, 204, 21, 0.5);
   }
 }
 
 /* ==========================================================================
    ILLUSTRATED OVERWORLD PARCHMENT MAP & DOSSIER
    ========================================================================== */
+@keyframes bh-chamber-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .overworld-layout {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-3);
+  animation: bh-chamber-reveal 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 
   @media (min-width: 960px) {
     grid-template-columns: 1fr 370px;
@@ -262,6 +287,30 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
+
+  polyline {
+    animation: bh-road-march 1.8s linear infinite;
+  }
+}
+
+@keyframes bh-road-march {
+  to {
+    stroke-dashoffset: -3.3;
+  }
+}
+
+@keyframes bh-pin-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(253, 224, 71, 0.55),
+      0 4px 12px rgba(0, 0, 0, 0.65);
+  }
+  50% {
+    box-shadow:
+      0 0 0 7px rgba(253, 224, 71, 0),
+      0 6px 14px rgba(0, 0, 0, 0.75);
+  }
 }
 
 .map-pin-node {
@@ -279,7 +328,17 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  transition: transform 0.15s ease;
+  transition:
+    transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.18s ease;
+
+  &:not(.locked):not(.completed):not(.selected) {
+    animation: bh-pin-pulse 2.2s ease-in-out infinite;
+  }
+
+  &:hover:not(.selected) {
+    transform: translate(-50%, -54%) scale(1.1);
+  }
 
   .pin-emblem {
     font-size: 1.1rem;
@@ -518,15 +577,28 @@
 /* ==========================================================================
    TOWN CHAMBERS: TAVERN, ARMORY, ACADEMY, CHRONICLES & ABOUT
    ========================================================================== */
+@keyframes bh-portrait-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
 .parchment-chamber {
-  background: linear-gradient(180deg, #281a10 0%, #180f09 100%);
-  border: 2px solid #8c673a;
+  background: linear-gradient(180deg, #2b1c11 0%, #170e08 100%);
+  border: 2px solid #9a7140;
   border-radius: 14px;
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, 0.72),
+    inset 0 1px 0 rgba(255, 235, 180, 0.16);
+  animation: bh-chamber-reveal 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .chamber-header {
@@ -590,10 +662,12 @@
   border: 3px solid #eab308;
   padding: 4px;
   flex-shrink: 0;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7);
 
   .hero-portrait {
     width: 100%;
     height: 100%;
+    animation: bh-portrait-float 2.6s ease-in-out infinite;
   }
 }
 
@@ -848,12 +922,30 @@
   .showcase-svg {
     width: 100%;
     height: 100%;
+    animation: bh-portrait-float 2.6s ease-in-out infinite;
   }
 
   .xp-bar-label {
     font-size: 0.78rem;
     color: #fde047;
+    margin-bottom: 6px;
   }
+}
+
+.xp-progress-track {
+  width: 100%;
+  height: 8px;
+  background-color: #120b06;
+  border: 1px solid #6b4c2b;
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.xp-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #eab308, #fde047);
+  transition: width 0.3s ease;
 }
 
 .stat-grid {
@@ -1053,8 +1145,33 @@
     font-size: 1.5rem;
   }
 
+  .sk-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 3px;
+  }
+
+  .sk-type-pill {
+    font-size: 0.64rem;
+    font-weight: 800;
+    padding: 1px 7px;
+    border-radius: 99px;
+    background-color: rgba(20, 184, 166, 0.22);
+    border: 1px solid #2dd4bf;
+    color: #99f6e4;
+
+    &.is-active-skill {
+      background-color: rgba(234, 179, 8, 0.22);
+      border-color: #fde047;
+      color: #fef08a;
+    }
+  }
+
   h5 {
-    margin: 0 0 2px;
+    margin: 0;
     color: #fffbeb;
   }
 
@@ -1447,25 +1564,84 @@
     box-shadow: 0 0 18px #ffffff;
   }
 
-  &.is-moving {
-    animation: bh-walk-waddle 0.52s ease-in-out infinite alternate;
+  &.is-moving .unit-rig {
+    animation: bh-walk-waddle 0.34s ease-in-out infinite alternate;
   }
 
-  &.is-attacking .unit-sprite {
-    transform: translateY(-9px) scale(1.12) !important;
+  &.is-attacking .unit-rig.lunge-right {
+    animation: bh-lunge-right 0.26s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  &.is-hurt .unit-sprite {
-    filter: brightness(1.9) saturate(1.8);
+  &.is-attacking .unit-rig.lunge-left {
+    animation: bh-lunge-left 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  &.is-hurt .unit-rig {
+    animation: bh-hurt-recoil 0.22s ease-out;
+    filter: brightness(1.85) saturate(1.7) drop-shadow(0 0 8px #ef4444);
+  }
+}
+
+.unit-rig {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: bh-idle-breathe 2.2s ease-in-out infinite;
+}
+
+@keyframes bh-idle-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+  50% {
+    transform: translateY(-2.5px) scaleY(1.025);
   }
 }
 
 @keyframes bh-walk-waddle {
   0% {
-    transform: translate(-50%, -82%) rotate(-3.5deg);
+    transform: translateY(-1px) rotate(-5.5deg) scale(1.02, 0.98);
   }
   100% {
-    transform: translate(-50%, -88%) rotate(3.5deg);
+    transform: translateY(-8px) rotate(5.5deg) scale(0.98, 1.03);
+  }
+}
+
+@keyframes bh-lunge-right {
+  0% {
+    transform: translateX(0) translateY(0) rotate(0deg);
+  }
+  45% {
+    transform: translateX(13px) translateY(-6px) rotate(9deg) scale(1.08);
+  }
+  100% {
+    transform: translateX(0) translateY(0) rotate(0deg);
+  }
+}
+
+@keyframes bh-lunge-left {
+  0% {
+    transform: translateX(0) translateY(0) rotate(0deg);
+  }
+  45% {
+    transform: translateX(-13px) translateY(-6px) rotate(-9deg) scale(1.08);
+  }
+  100% {
+    transform: translateX(0) translateY(0) rotate(0deg);
+  }
+}
+
+@keyframes bh-hurt-recoil {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: translateY(-4px) scale(1.12, 0.88);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 
@@ -1567,21 +1743,50 @@
   transition: transform 0.1s ease;
 }
 
+@keyframes bh-float-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -25%) scale(0.55);
+  }
+  28% {
+    opacity: 1;
+    transform: translate(-50%, -55%) scale(1.18);
+  }
+  100% {
+    opacity: 0.92;
+    transform: translate(-50%, -65%) scale(1);
+  }
+}
+
 .floating-text {
   position: absolute;
   transform: translate(-50%, -50%);
   font-weight: 900;
   font-size: 1rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.95),
+    0 0 8px rgba(0, 0, 0, 0.75);
   pointer-events: none;
   z-index: 120;
+  animation: bh-float-pop 0.42s cubic-bezier(0.22, 1, 0.36, 1);
 
   &.is-crit {
-    font-size: 1.35rem;
+    font-size: 1.38rem;
   }
 }
 
 /* Victory / Defeat Overlay Modal */
+@keyframes bh-modal-pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .outcome-overlay {
   position: absolute;
   inset: 0;
@@ -1606,6 +1811,7 @@
   flex-direction: column;
   gap: var(--space-3);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
+  animation: bh-modal-pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
 
   h2 {
     margin: 0;

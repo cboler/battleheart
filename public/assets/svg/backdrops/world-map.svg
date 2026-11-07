@@ -1,133 +1,228 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620" preserveAspectRatio="none">
   <defs>
-    <radialGradient id="parchment" cx="50%" cy="48%" r="58%">
-      <stop offset="0%" stop-color="#f7e8b5"/>
-      <stop offset="68%" stop-color="#e2c483"/>
-      <stop offset="100%" stop-color="#b5894c"/>
+    <radialGradient id="parchment" cx="50%" cy="48%" r="60%">
+      <stop offset="0%" stop-color="#faefd0"/>
+      <stop offset="58%" stop-color="#e5c888"/>
+      <stop offset="88%" stop-color="#c69b58"/>
+      <stop offset="100%" stop-color="#9e7136"/>
     </radialGradient>
     <linearGradient id="sea" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#2b4c5e"/>
-      <stop offset="50%" stop-color="#3d687d"/>
-      <stop offset="100%" stop-color="#1e3745"/>
+      <stop offset="0%" stop-color="#1d3544"/>
+      <stop offset="50%" stop-color="#2d5266"/>
+      <stop offset="100%" stop-color="#152834"/>
     </linearGradient>
     <radialGradient id="volcanoGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#dc2626" stop-opacity="0.55"/>
+      <stop offset="0%" stop-color="#ef4444" stop-opacity="0.65"/>
+      <stop offset="55%" stop-color="#b91c1c" stop-opacity="0.25"/>
       <stop offset="100%" stop-color="#7f1d1d" stop-opacity="0"/>
     </radialGradient>
+    <radialGradient id="mireGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#84cc16" stop-opacity="0.5"/>
+      <stop offset="70%" stop-color="#3f6212" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#3f6212" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mtLeft" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c9a66b"/>
+      <stop offset="100%" stop-color="#9c7a44"/>
+    </linearGradient>
+    <linearGradient id="mtRight" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8a6836"/>
+      <stop offset="100%" stop-color="#5c421e"/>
+    </linearGradient>
   </defs>
 
-  <!-- Cartographic Sea Backdrop & Rhumb Lines -->
+  <!-- Cartographic Sea Backdrop & Rhumb Compass Lines -->
   <rect width="1000" height="620" fill="url(#sea)"/>
-  <g stroke="rgba(255,255,255,0.08)" stroke-width="1">
-    <line x1="90" y1="95" x2="950" y2="550"/>
-    <line x1="90" y1="95" x2="950" y2="250"/>
-    <line x1="90" y1="95" x2="450" y2="600"/>
-    <line x1="880" y1="80" x2="120" y2="520"/>
+  <g stroke="rgba(254, 240, 138, 0.09)" stroke-width="1">
+    <line x1="92" y1="96" x2="960" y2="560"/>
+    <line x1="92" y1="96" x2="960" y2="230"/>
+    <line x1="92" y1="96" x2="460" y2="610"/>
+    <line x1="880" y1="70" x2="110" y2="540"/>
+    <circle cx="92" cy="96" r="160" fill="none" stroke-dasharray="4 6"/>
+    <circle cx="92" cy="96" r="340" fill="none" stroke-dasharray="6 8"/>
   </g>
 
-  <!-- Continent Coastline Drop Shadow & Parchment Landmass -->
+  <!-- Subtle Sea Wave Ink Strokes -->
+  <g stroke="rgba(186, 230, 253, 0.2)" stroke-width="1.8" fill="none" stroke-linecap="round">
+    <path d="M 25 565 Q 38 558 51 565 T 77 565"/>
+    <path d="M 885 575 Q 898 568 911 575 T 937 575"/>
+    <path d="M 920 65 Q 933 58 946 65 T 972 65"/>
+  </g>
+
+  <!-- Continent Coastline Drop Shadow & Shallow Water Ripple Ring -->
   <path
     d="M 55 460 Q 25 260 110 135 Q 230 35 480 55 Q 720 75 880 95 Q 965 180 945 360 Q 925 545 730 570 Q 450 595 215 565 Q 75 550 55 460 Z"
-    fill="rgba(0,0,0,0.45)"
-    transform="translate(8, 10)"
+    fill="rgba(0,0,0,0.52)"
+    transform="translate(10, 12)"
   />
+  <path
+    d="M 55 460 Q 25 260 110 135 Q 230 35 480 55 Q 720 75 880 95 Q 965 180 945 360 Q 925 545 730 570 Q 450 595 215 565 Q 75 550 55 460 Z"
+    fill="none"
+    stroke="rgba(125, 211, 252, 0.22)"
+    stroke-width="14"
+  />
+  <!-- Main Parchment Continent -->
   <path
     d="M 55 460 Q 25 260 110 135 Q 230 35 480 55 Q 720 75 880 95 Q 965 180 945 360 Q 925 545 730 570 Q 450 595 215 565 Q 75 550 55 460 Z"
     fill="url(#parchment)"
-    stroke="#5c3a1e"
+    stroke="#4a2c11"
     stroke-width="6"
   />
-  <!-- Inner Double Coastline Ink Ring -->
+  <!-- Inner Cartographic Border -->
   <path
     d="M 70 452 Q 42 265 122 146 Q 238 50 480 68 Q 712 88 866 108 Q 948 188 928 355 Q 910 532 722 555 Q 450 578 220 550 Q 88 536 70 452 Z"
     fill="none"
     stroke="#784f2a"
-    stroke-width="2"
-    stroke-dasharray="8 6"
+    stroke-width="1.8"
+    stroke-dasharray="7 5"
   />
 
-  <!-- Winding Azure River from the Mountains to the Southern Sea -->
+  <!-- Terrain Biome Tints -->
+  <!-- Sunlit Meadows -->
+  <ellipse cx="145" cy="415" rx="95" ry="68" fill="#84a955" opacity="0.32"/>
+  <!-- Whispering Forest -->
+  <ellipse cx="220" cy="325" rx="95" ry="75" fill="#4d7c2b" opacity="0.38"/>
+  <!-- Mire of the Ooze (Bubbling Slime Swamp around Stages 3 & 4) -->
+  <ellipse cx="305" cy="365" rx="95" ry="78" fill="url(#mireGlow)"/>
+  <!-- Sunken Catacombs & Gorgon Sanctum -->
+  <ellipse cx="565" cy="355" rx="135" ry="88" fill="#64748b" opacity="0.34"/>
+  <!-- Volcano Ash Waste -->
+  <ellipse cx="775" cy="215" rx="125" ry="95" fill="#44403c" opacity="0.38"/>
+
+  <!-- Winding Azure River from the Mountains through the Mire to the Sea -->
   <path
     d="M 445 190 Q 420 265 375 310 T 320 435 Q 300 500 285 562"
     fill="none"
-    stroke="#3d687d"
-    stroke-width="10"
+    stroke="#2d5266"
+    stroke-width="11"
     stroke-linecap="round"
   />
   <path
     d="M 445 190 Q 420 265 375 310 T 320 435 Q 300 500 285 562"
     fill="none"
     stroke="#7dd3fc"
-    stroke-width="3"
+    stroke-width="3.5"
     stroke-linecap="round"
-    opacity="0.55"
+    opacity="0.6"
   />
 
-  <!-- Region 1: Sunlit King's Citadel & Western Meadows -->
-  <ellipse cx="150" cy="400" rx="95" ry="65" fill="#a3b16b" opacity="0.35"/>
-  <g transform="translate(52, 345)" stroke="#3d2310" stroke-width="2.5">
-    <rect x="8" y="26" width="52" height="36" fill="#d6c5b3"/>
-    <rect x="2" y="14" width="16" height="48" fill="#c2ad96"/>
-    <rect x="50" y="14" width="16" height="48" fill="#c2ad96"/>
-    <polygon points="0,14 10,0 20,14" fill="#2563eb"/>
-    <polygon points="48,14 58,0 68,14" fill="#2563eb"/>
-    <polygon points="20,26 34,8 48,26" fill="#dc2626"/>
-    <path d="M 27 62 L 27 44 Q 34 38 41 44 L 41 62 Z" fill="#271206"/>
+  <!-- Bubbling Toxic Slime Pools in the Ooze Mire (Stage 3 & 4) -->
+  <g stroke="#365314" stroke-width="1.8">
+    <ellipse cx="285" cy="335" rx="22" ry="10" fill="#84cc16" opacity="0.75"/>
+    <ellipse cx="328" cy="378" rx="18" ry="8" fill="#a3e635" opacity="0.75"/>
+    <circle cx="278" cy="333" r="3" fill="#ecfccb"/>
+    <circle cx="332" cy="376" r="2.5" fill="#ecfccb"/>
   </g>
 
-  <!-- Region 2: Whispering Woods & Wolf Den -->
-  <ellipse cx="290" cy="355" rx="145" ry="95" fill="#658c48" opacity="0.38"/>
-  <g fill="#3f6212" stroke="#271a0c" stroke-width="2.2">
-    <circle cx="195" cy="295" r="18"/>
-    <circle cx="215" cy="285" r="22"/>
-    <circle cx="235" cy="300" r="17"/>
-    <circle cx="295" cy="385" r="19"/>
-    <circle cx="318" cy="378" r="22"/>
-    <circle cx="255" cy="420" r="16"/>
+  <!-- Region 1: Royal Citadel (Western Keep) -->
+  <g transform="translate(54, 338)" stroke="#3d2310" stroke-width="2.4" stroke-linejoin="round">
+    <rect x="10" y="28" width="52" height="36" fill="#e6d5b8"/>
+    <!-- Battlements -->
+    <rect x="18" y="22" width="8" height="6" fill="#d6c5b3"/>
+    <rect x="32" y="22" width="8" height="6" fill="#d6c5b3"/>
+    <rect x="46" y="22" width="8" height="6" fill="#d6c5b3"/>
+    <!-- Flanking Towers -->
+    <rect x="2" y="14" width="16" height="50" fill="#d6c5b3"/>
+    <rect x="54" y="14" width="16" height="50" fill="#d6c5b3"/>
+    <polygon points="-1,14 10,-2 21,14" fill="#1d4ed8"/>
+    <polygon points="51,14 62,-2 73,14" fill="#1d4ed8"/>
+    <!-- Central Keep Roof & Pennant -->
+    <polygon points="20,28 36,6 52,28" fill="#b91c1c"/>
+    <line x1="36" y1="6" x2="36" y2="-8" stroke="#3d2310" stroke-width="2"/>
+    <polygon points="36,-8 48,-4 36,0" fill="#fde047" stroke="none"/>
+    <!-- Keep Gate -->
+    <path d="M 29 64 L 29 45 Q 36 38 43 45 L 43 64 Z" fill="#271206"/>
   </g>
 
-  <!-- Region 3: Crag of the Mountain King -->
-  <g stroke="#3d2310" stroke-width="3" stroke-linejoin="round">
-    <polygon points="340,245 395,135 450,245" fill="#b08d57"/>
-    <polygon points="395,135 375,175 395,166 415,175" fill="#f8fafc"/>
-    <polygon points="410,255 475,115 540,255" fill="#9c7a44"/>
-    <polygon points="475,115 450,165 475,152 500,165" fill="#f8fafc"/>
-    <polygon points="485,250 538,150 590,250" fill="#b08d57"/>
+  <!-- Region 2: Whispering Woods & Pine Thickets -->
+  <g stroke="#271a0c" stroke-width="2" stroke-linejoin="round">
+    <!-- Pine & Oak Cluster NW -->
+    <polygon points="155,310 170,275 185,310" fill="#365314"/>
+    <polygon points="158,295 170,265 182,295" fill="#4d7c0f"/>
+    <polygon points="180,305 196,268 212,305" fill="#3f6212"/>
+    <polygon points="183,288 196,256 209,288" fill="#65a30d"/>
+    <circle cx="222" cy="292" r="16" fill="#3f6212"/>
+    <circle cx="218" cy="288" r="11" fill="#65a30d" stroke="none"/>
+    <!-- Southern Swamp Willows -->
+    <circle cx="205" cy="405" r="16" fill="#365314"/>
+    <circle cx="228" cy="412" r="14" fill="#3f6212"/>
+    <polygon points="335,418 348,385 361,418" fill="#365314"/>
+    <polygon points="355,412 370,376 385,412" fill="#3f6212"/>
   </g>
 
-  <!-- Region 4: Sunken Catacombs & Gorgon Sanctum -->
-  <ellipse cx="555" cy="340" rx="135" ry="88" fill="#64748b" opacity="0.32"/>
-  <g transform="translate(475, 325)" stroke="#3d2310" stroke-width="2.5" fill="#94a3b8">
-    <rect x="0" y="0" width="66" height="8"/>
-    <rect x="6" y="8" width="10" height="32"/>
-    <rect x="28" y="8" width="10" height="32"/>
-    <rect x="50" y="8" width="10" height="32"/>
-    <rect x="-4" y="40" width="74" height="7"/>
+  <!-- Region 3: Crag of the Mountain King (Two-Tone Shaded Peaks) -->
+  <g stroke="#3d2310" stroke-width="2.8" stroke-linejoin="round">
+    <!-- West Peak -->
+    <polygon points="335,245 395,130 395,245" fill="url(#mtLeft)"/>
+    <polygon points="395,130 455,245 395,245" fill="url(#mtRight)"/>
+    <polygon points="395,130 374,170 395,160 416,170" fill="#f8fafc"/>
+    <!-- Grand Central Titan Peak -->
+    <polygon points="405,258 478,105 478,258" fill="url(#mtLeft)"/>
+    <polygon points="478,105 550,258 478,258" fill="url(#mtRight)"/>
+    <polygon points="478,105 450,162 478,148 506,162" fill="#f8fafc"/>
+    <!-- East Peak -->
+    <polygon points="495,252 548,142 548,252" fill="url(#mtLeft)"/>
+    <polygon points="548,142 602,252 548,252" fill="url(#mtRight)"/>
+    <polygon points="548,142 530,178 548,170 566,178" fill="#f1f5f9"/>
   </g>
 
-  <!-- Region 5: Obsidian Spire of Ignis -->
-  <circle cx="775" cy="185" r="115" fill="url(#volcanoGlow)"/>
-  <g stroke="#271206" stroke-width="3" stroke-linejoin="round">
-    <polygon points="685,220 755,95 825,220" fill="#44403c"/>
-    <polygon points="745,235 815,82 885,235" fill="#292524"/>
-    <ellipse cx="815" cy="84" rx="18" ry="6" fill="#f97316"/>
-    <path d="M 810 88 Q 802 140 788 185" stroke="#ef4444" stroke-width="4" fill="none"/>
-    <path d="M 820 88 Q 828 145 842 195" stroke="#f97316" stroke-width="3.5" fill="none"/>
+  <!-- Region 4: Sunken Catacombs & Gorgon Temple Ruins -->
+  <g transform="translate(505, 310)" stroke="#334155" stroke-width="2.4" fill="#cbd5e1">
+    <polygon points="-6,0 35,-18 76,0" fill="#94a3b8"/>
+    <rect x="0" y="0" width="70" height="7" fill="#94a3b8"/>
+    <rect x="6" y="7" width="10" height="32"/>
+    <rect x="30" y="7" width="10" height="32"/>
+    <rect x="54" y="7" width="10" height="32"/>
+    <rect x="-4" y="39" width="78" height="8" fill="#64748b"/>
+  </g>
+
+  <!-- Region 5: Obsidian Spire of Ignis (Volcanic Caldera & Lava Rivers) -->
+  <circle cx="775" cy="185" r="125" fill="url(#volcanoGlow)"/>
+  <g stroke="#1c1917" stroke-width="2.8" stroke-linejoin="round">
+    <polygon points="675,228 748,96 748,228" fill="#57534e"/>
+    <polygon points="748,96 820,228 748,228" fill="#292524"/>
+    <polygon points="738,242 815,78 815,242" fill="#44403c"/>
+    <polygon points="815,78 892,242 815,242" fill="#1c1917"/>
+    <!-- Glowing Caldera Crater -->
+    <ellipse cx="815" cy="80" rx="20" ry="7" fill="#fde047" stroke="#dc2626" stroke-width="2"/>
+    <!-- Flowing Magma Streams -->
+    <path d="M 808 86 Q 798 140 782 195" stroke="#ef4444" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M 808 86 Q 798 140 782 195" stroke="#fde047" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M 822 86 Q 832 145 848 205" stroke="#f97316" stroke-width="4" fill="none" stroke-linecap="round"/>
   </g>
 
   <!-- Region 6: Doomvale Colosseum (Bottom-Right) -->
-  <g transform="translate(730, 415)" stroke="#3d2310" stroke-width="2.5">
-    <ellipse cx="48" cy="36" rx="46" ry="24" fill="#d6c5b3"/>
-    <ellipse cx="48" cy="30" rx="34" ry="15" fill="#b45309"/>
-    <path d="M 4 30 L 4 48 Q 48 68 92 48 L 92 30" fill="#c2ad96"/>
+  <g transform="translate(722, 412)" stroke="#3d2310" stroke-width="2.5">
+    <ellipse cx="52" cy="40" rx="50" ry="26" fill="#d6c5b3"/>
+    <ellipse cx="52" cy="32" rx="38" ry="16" fill="#b45309"/>
+    <path d="M 4 32 L 4 50 Q 52 72 100 50 L 100 32" fill="#e6d5b8"/>
+    <!-- Colosseum Arches -->
+    <g fill="#271206" stroke="none">
+      <rect x="18" y="38" width="8" height="12" rx="4"/>
+      <rect x="34" y="41" width="8" height="13" rx="4"/>
+      <rect x="50" y="42" width="8" height="13" rx="4"/>
+      <rect x="66" y="41" width="8" height="13" rx="4"/>
+      <rect x="80" y="38" width="8" height="12" rx="4"/>
+    </g>
   </g>
 
-  <!-- Ornate Compass Rose (Top-Left) & Cartography Scroll Banner -->
+  <!-- Hand-Lettered Cartography Region Labels -->
+  <g font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-style="italic" fill="#4a2c11" opacity="0.78" text-anchor="middle" font-size="13" letter-spacing="1.5">
+    <text x="140" y="492">SUNLIT VALE</text>
+    <text x="305" y="468">MIRE OF OOZE</text>
+    <text x="475" y="92">TITAN CRAGS</text>
+    <text x="555" y="445">GORGON CRYPTS</text>
+    <text x="805" y="268">IGNIS CALDERA</text>
+    <text x="775" y="502">DOOMVALE ARENA</text>
+  </g>
+
+  <!-- Ornate Compass Rose (Top-Left) -->
   <g transform="translate(92, 96)">
-    <circle cx="0" cy="0" r="34" fill="#f7e8b5" stroke="#5c3a1e" stroke-width="3"/>
-    <circle cx="0" cy="0" r="28" fill="none" stroke="#784f2a" stroke-width="1" stroke-dasharray="3 3"/>
-    <polygon points="0,-30 7,-7 30,0 7,7 0,30 -7,7 -30,0 -7,-7" fill="#b45309" stroke="#3d2310" stroke-width="1.5"/>
-    <polygon points="0,-30 4,-7 0,0 -4,-7" fill="#dc2626"/>
-    <circle cx="0" cy="0" r="4" fill="#fde047" stroke="#3d2310" stroke-width="1.5"/>
+    <circle cx="0" cy="0" r="38" fill="#faefd0" stroke="#4a2c11" stroke-width="3"/>
+    <circle cx="0" cy="0" r="32" fill="none" stroke="#784f2a" stroke-width="1.2" stroke-dasharray="3 3"/>
+    <polygon points="0,-24 6,-6 24,0 6,6 0,24 -6,6 -24,0 -6,-6" fill="#d97706" stroke="#3d2310" stroke-width="1.2" transform="rotate(45)"/>
+    <polygon points="0,-33 7,-7 33,0 7,7 0,33 -7,7 -33,0 -7,-7" fill="#fde047" stroke="#3d2310" stroke-width="1.5"/>
+    <polygon points="0,-33 5,-7 0,0 -5,-7" fill="#dc2626"/>
+    <circle cx="0" cy="0" r="4.5" fill="#fde047" stroke="#3d2310" stroke-width="1.5"/>
   </g>
 </svg>
