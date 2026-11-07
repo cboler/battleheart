@@ -35,6 +35,27 @@ describe('Battleheart Application & Core Mechanics Tests', () => {
       expect(compiled.querySelector('.parchment-map-stage')).toBeTruthy();
       expect(compiled.querySelectorAll('.map-pin-node').length).toBeGreaterThanOrEqual(8);
     });
+
+    it('should toggle forced 90-degree widescreen landscape mode via toggleForceLandscape()', async () => {
+      const fixture = TestBed.createComponent(HomeComponent);
+      await fixture.whenStable();
+      const comp = fixture.componentInstance;
+      const compiled = fixture.nativeElement as HTMLElement;
+      const shell = compiled.querySelector('.bh-shell')!;
+
+      expect(comp.forceLandscape()).toBe(false);
+      expect(shell.classList.contains('force-landscape')).toBe(false);
+
+      comp.toggleForceLandscape();
+      fixture.detectChanges();
+      expect(comp.forceLandscape()).toBe(true);
+      expect(shell.classList.contains('force-landscape')).toBe(true);
+
+      comp.toggleForceLandscape();
+      fixture.detectChanges();
+      expect(comp.forceLandscape()).toBe(false);
+      expect(shell.classList.contains('force-landscape')).toBe(false);
+    });
   });
 
   describe('GameStateService & LocalStorage Persistence', () => {

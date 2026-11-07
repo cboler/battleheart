@@ -76,6 +76,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   // Save import/export UI state
   protected readonly saveJsonText = signal('');
   protected readonly saveStatusMsg = signal('');
+  readonly forceLandscape = signal(false);
 
   // Battlefield Line-Drawing Drag State
   protected readonly draggingFromHeroUid = signal<string | null>(null);
@@ -194,8 +195,23 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   protected launchStage(stage: StageDefinition): void {
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
+    }
     this.audio.playSelect();
     this.combat.startBattle(stage);
+  }
+
+  toggleForceLandscape(): void {
+    const next = !this.forceLandscape();
+    this.forceLandscape.set(next);
+    if (next && typeof screen !== 'undefined' && 'orientation' in screen) {
+      const orient = screen.orientation as ScreenOrientation & {
+        lock?: (o: string) => Promise<void>;
+      };
+      orient.lock?.('landscape').catch(() => undefined);
+    }
+    this.audio.playSelect();
   }
 
   protected triggerSkill(heroUid: string, skillIndex: number): void {
@@ -317,6 +333,14 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (!el) return null;
     const rect = el.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return null;
+    if (this.forceLandscape()) {
+      const x = ((event.clientY - rect.top) / rect.height) * 100;
+      const y = (1 - (event.clientX - rect.left) / rect.width) * 100;
+      return {
+        x: Math.max(5, Math.min(95, x)),
+        y: Math.max(30, Math.min(92, y)),
+      };
+    }
     const x = ((event.clientX - rect.left) / rect.width) * 100;
     const y = ((event.clientY - rect.top) / rect.height) * 100;
     return {

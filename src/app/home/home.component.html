@@ -1,4 +1,16 @@
-<div class="bh-shell">
+<div class="bh-shell" [class.force-landscape]="forceLandscape()">
+  <!-- Portrait Orientation Hint & 1-Tap Widescreen Landscape Toggle -->
+  <div class="portrait-rotate-banner" role="region" aria-label="Landscape Mode Recommendation">
+    <span>📱 Original Battleheart is designed for widescreen landscape!</span>
+    <button
+      type="button"
+      class="btn-rotate-landscape"
+      id="toggle-landscape-banner-btn"
+      (click)="toggleForceLandscape()"
+    >
+      🔄 {{ forceLandscape() ? 'Exit Rotated View' : 'Rotate to Landscape' }}
+    </button>
+  </div>
   <!-- ===================================================================== -->
   <!-- WARBAND WORLD MAP & TOWN BUILDINGS (When Not in Active Combat)        -->
   <!-- ===================================================================== -->
@@ -53,6 +65,16 @@
             </button>
           }
         </div>
+
+        <button
+          type="button"
+          class="crest-icon-btn landscape-toggle-btn"
+          (click)="toggleForceLandscape()"
+          title="Toggle Rotated Landscape View (for portrait-locked phones)"
+          aria-label="Toggle Landscape View"
+        >
+          🔄
+        </button>
 
         <button
           type="button"
@@ -965,6 +987,15 @@
               }
             </span>
           </div>
+          <button
+            type="button"
+            class="hud-btn hud-btn-rotate"
+            (click)="toggleForceLandscape()"
+            title="Rotate to Widescreen Landscape"
+            aria-label="Rotate to Widescreen Landscape"
+          >
+            🔄
+          </button>
           <button type="button" class="hud-btn" (click)="combat.togglePause()">
             {{ combat.isPaused() ? '▶️' : '⏸️' }}
           </button>
