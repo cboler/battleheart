@@ -51,4 +51,3 @@ Recreate the original _Battleheart_ (2011 tactical real-time party RPG) inside t
 
 - **Ceiling / Known Limitation**: Combat target scanning uses an $O(N \times M)$ loop over party heroes ($\le 4$) and active monsters ($\le 20$), which runs in microseconds per frame. If monster counts ever exceed 500+, upgrade to a spatial hash grid.
 - **Rollback Strategy**: Revert commits or reset branch to template baseline if build or deployment scripts break.
-

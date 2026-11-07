@@ -484,4 +484,3 @@ export class GameStateService {
     this.storage.saveSlot(updated, this.activeSlot());
   }
 }
-

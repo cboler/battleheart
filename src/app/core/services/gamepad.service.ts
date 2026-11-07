@@ -147,4 +147,3 @@ export class GamepadService implements OnDestroy {
     return !!this.document.activeElement?.closest('input, textarea, select');
   }
 }
-
