@@ -2,6 +2,7 @@ import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
 import { ENEMY_CATALOG } from '../models/game-catalog';
 import {
   ArenaRingEffect,
+  ArenaTelegraphEffect,
   CombatUnit,
   EnemyId,
   FloatingText,
@@ -31,6 +32,7 @@ export class CombatService implements OnDestroy {
   public readonly projectiles = signal<Projectile[]>([]);
   public readonly floatingTexts = signal<FloatingText[]>([]);
   public readonly ringEffects = signal<ArenaRingEffect[]>([]);
+  public readonly telegraphs = signal<ArenaTelegraphEffect[]>([]);
 
   public readonly selectedHeroUid = signal<string | null>(null);
 
@@ -40,6 +42,7 @@ export class CombatService implements OnDestroy {
     xp: number;
     stars: number;
     leveledUpHeroes: string[];
+    bonusLootName: string;
   } | null>(null);
 
   public readonly heroes = computed(() => this.units().filter((u) => u.isHero));
@@ -47,6 +50,31 @@ export class CombatService implements OnDestroy {
   public readonly selectedHero = computed(
     () => this.units().find((u) => u.uid === this.selectedHeroUid()) ?? null,
   );
+  public readonly healerBeams = computed(() => {
+    const all = this.units();
+    const allies = all.filter((u) => u.isHero && u.hp > 0);
+    const beams: { id: string; x1: number; y1: number; x2: number; y2: number }[] = [];
+    for (const h of allies) {
+      if (h.role !== 'healer' || h.stunTimer > 0) continue;
+      let target = allies.find((a) => a.uid === h.targetUnitUid);
+      if (!target) {
+        const injured = [...allies]
+          .filter((a) => a.hp < a.maxHp)
+          .sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp);
+        target = injured[0];
+      }
+      if (target) {
+        beams.push({
+          id: `beam-${h.uid}`,
+          x1: h.x,
+          y1: h.y - 4,
+          x2: target.x,
+          y2: target.y - 4,
+        });
+      }
+    }
+    return beams;
+  });
 
   private rafId: number | null = null;
   private lastFrameTime = 0;
@@ -65,6 +93,7 @@ export class CombatService implements OnDestroy {
     this.projectiles.set([]);
     this.floatingTexts.set([]);
     this.ringEffects.set([]);
+    this.telegraphs.set([]);
     this.lastRewardSummary.set(null);
 
     // Spawn Party Heroes on left side of arena
@@ -114,7 +143,7 @@ export class CombatService implements OnDestroy {
         x: pos.x,
         y: pos.y,
         facing: 'right',
-        targetUnitUid: null,
+        targetUnitUid: h.def.role === 'healer' && party[0] ? `hero-${party[0].def.id}` : null,
         moveDestination: null,
         maxHp: h.maxHp,
         hp: h.maxHp,
@@ -505,6 +534,7 @@ export class CombatService implements OnDestroy {
       unit.attackBuffTimer = Math.max(0, unit.attackBuffTimer - clampedDt);
       unit.attackAnimTimer = Math.max(0, unit.attackAnimTimer - clampedDt);
       unit.hurtAnimTimer = Math.max(0, unit.hurtAnimTimer - clampedDt);
+      unit.isMoving = false;
 
       // Poison DoT
       if (unit.poisonTimer > 0) {
@@ -579,6 +609,39 @@ export class CombatService implements OnDestroy {
         .filter((r) => r.life > 0),
     );
 
+    // 4b. Step Boss Danger Telegraphs (gives player ~1.4s to drag-kite heroes out of red circle!)
+    const activeTelegraphs: ArenaTelegraphEffect[] = [];
+    for (const tel of this.telegraphs()) {
+      const source = allUnits.find((u) => u.uid === tel.sourceUid && u.hp > 0);
+      if (!source || source.stunTimer > 0) continue; // Stunned or slain boss cancels telegraph!
+      const nextElapsed = tel.elapsed + clampedDt;
+      if (nextElapsed >= tel.duration) {
+        // Detonate!
+        const heroesInBlast = allUnits.filter(
+          (u) => u.isHero && u.hp > 0 && this.dist(tel, u) <= tel.radius,
+        );
+        for (const h of heroesInBlast) {
+          const mult = tel.ability === 'ground-slam' ? 1.55 : 1.4;
+          this.applyDamage(source, h, Math.round(source.attack * mult), true);
+          if (tel.ability === 'ground-slam') {
+            h.stunTimer = 1.6;
+          }
+        }
+        this.addRing(tel.x, tel.y, tel.radius, tel.color);
+        this.addText(
+          tel.x,
+          tel.y - 10,
+          heroesInBlast.length === 0 ? 'DODGED!' : `${tel.label}!`,
+          heroesInBlast.length === 0 ? '#34d399' : tel.color,
+          true,
+        );
+        this.audio.playFireball();
+      } else {
+        activeTelegraphs.push({ ...tel, elapsed: nextElapsed });
+      }
+    }
+    this.telegraphs.set(activeTelegraphs);
+
     // Remove dead units and count arena kills
     const deadEnemies = allUnits.filter((u) => !u.isHero && u.hp <= 0).length;
     if (deadEnemies > 0) {
@@ -621,6 +684,7 @@ export class CombatService implements OnDestroy {
         hero.x = this.clampX(hero.x + (dx / d) * speed * dt);
         hero.y = this.clampY(hero.y + (dy / d) * speed * dt);
         hero.facing = dx >= 0 ? 'right' : 'left';
+        hero.isMoving = true;
         return;
       }
     }
@@ -673,6 +737,7 @@ export class CombatService implements OnDestroy {
       const dy = target.y - hero.y;
       hero.x = this.clampX(hero.x + (dx / d) * speed * dt);
       hero.y = this.clampY(hero.y + (dy / d) * speed * dt);
+      hero.isMoving = true;
     } else {
       const rateMult = hero.hasteTimer > 0 ? 1.35 : 1;
       hero.attackTimer -= dt * rateMult;
@@ -759,6 +824,7 @@ export class CombatService implements OnDestroy {
       const dy = target.y - enemy.y;
       enemy.x = this.clampX(enemy.x + (dx / d) * speed * dt);
       enemy.y = this.clampY(enemy.y + (dy / d) * speed * dt);
+      enemy.isMoving = true;
     } else {
       enemy.attackTimer -= dt;
       if (enemy.attackTimer <= 0) {
@@ -780,15 +846,22 @@ export class CombatService implements OnDestroy {
 
     switch (enemy.specialAbility) {
       case 'ground-slam': {
-        for (const h of heroes) {
-          if (this.dist(enemy, h) <= 32) {
-            this.applyDamage(enemy, h, Math.round(enemy.attack * 1.4), true);
-            h.stunTimer = 1.6;
-          }
-        }
-        this.addRing(enemy.x, enemy.y, 28, '#f97316');
-        this.addText(enemy.x, enemy.y - 10, 'GROUND SLAM!', '#f97316', true);
-        this.audio.playFireball();
+        this.telegraphs.set([
+          ...this.telegraphs(),
+          {
+            id: `tel-${this.uidCounter++}`,
+            sourceUid: enemy.uid,
+            x: enemy.x,
+            y: enemy.y,
+            radius: 26,
+            color: '#f97316',
+            label: 'GROUND SLAM',
+            elapsed: 0,
+            duration: 1.45,
+            ability: 'ground-slam',
+          },
+        ]);
+        this.addText(enemy.x, enemy.y - 10, '⚠️ SLAM WINDUP!', '#fbbf24', true);
         break;
       }
       case 'petrify-gaze': {
@@ -802,12 +875,23 @@ export class CombatService implements OnDestroy {
         break;
       }
       case 'fire-breath': {
-        for (const h of heroes) {
-          this.applyDamage(enemy, h, Math.round(enemy.attack * 1.25), true);
-        }
-        this.addRing(enemy.x, enemy.y, 38, '#ef4444');
-        this.addText(enemy.x, enemy.y - 10, 'INFERNO BREATH!', '#ef4444', true);
-        this.audio.playFireball();
+        const targetHero = heroes[0] ?? enemy;
+        this.telegraphs.set([
+          ...this.telegraphs(),
+          {
+            id: `tel-${this.uidCounter++}`,
+            sourceUid: enemy.uid,
+            x: targetHero.x,
+            y: targetHero.y,
+            radius: 28,
+            color: '#ef4444',
+            label: 'INFERNO BREATH',
+            elapsed: 0,
+            duration: 1.5,
+            ability: 'fire-breath',
+          },
+        ]);
+        this.addText(enemy.x, enemy.y - 10, '⚠️ BREATH WINDUP!', '#ef4444', true);
         break;
       }
       case 'dark-mend': {
@@ -1019,6 +1103,7 @@ export class CombatService implements OnDestroy {
         xp: xpEarned,
         stars: 0,
         leveledUpHeroes: res.leveledUpHeroes,
+        bonusLootName: stage.isArena ? 'Colosseum Valor Purse' : 'Retreat Salvage Pouch',
       });
       return;
     }
@@ -1033,6 +1118,13 @@ export class CombatService implements OnDestroy {
         this.stopLoop();
         this.audio.playVictory();
 
+        const spoilsPool = [
+          "King's Gilded War Chest",
+          'Mithril-Bound Spoils Coffer',
+          "Goblin Chieftain's Hoard",
+          'Sunforged Relic Strongbox',
+          'Dragonscale Treasury Chest',
+        ];
         const partySize = this.gameState.partyHeroes().length;
         const casualties = partySize - livingHeroes.length;
         const stars = casualties === 0 ? 3 : casualties === 1 ? 2 : 1;
@@ -1048,6 +1140,7 @@ export class CombatService implements OnDestroy {
           xp: stage.xpReward,
           stars,
           leveledUpHeroes: res.leveledUpHeroes,
+          bonusLootName: spoilsPool[(stage.index - 1) % spoilsPool.length] ?? spoilsPool[0],
         });
       }
     }

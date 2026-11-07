@@ -39,8 +39,10 @@ test.describe('Battleheart Responsive Shell & Gameplay Smoke Tests', () => {
     await expect(page.locator('.about-card')).toContainText('Mika Mobile');
     await expect(page.locator('.about-card')).toContainText('non-commercial');
 
-    // 5. Switch to Map tab and launch Stage 1 Battle
+    // 5. Switch to Map tab, verify Illustrated Overworld Map pins, and launch Stage 1 Battle
     await page.locator('#tab-map').click();
+    await expect(page.locator('.parchment-map-stage')).toBeVisible();
+    await expect(page.locator('.map-pin-node')).toHaveCount(8);
     await page.locator('#start-stage-1').click();
 
     const arena = page.locator('#battlefield-arena');

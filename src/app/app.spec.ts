@@ -18,22 +18,22 @@ describe('Battleheart Application & Core Mechanics Tests', () => {
     }).compileComponents();
   });
 
-  describe('App Shell', () => {
-    it('should create the root shell and render Battleheart title', async () => {
-      const fixture = TestBed.createComponent(App);
-      await fixture.whenStable();
-      const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('.brand-title')?.textContent).toContain('Battleheart');
-      expect(compiled.querySelector('#nav-link-home')?.textContent?.trim()).toBe('Realm');
-      expect(compiled.querySelector('#nav-link-status')?.textContent?.trim()).toBe('Status');
-    });
-
-    it('should retain accessible skip-link', async () => {
+  describe('App Shell & HomeComponent Warband Hub', () => {
+    it('should create the root shell and retain accessible skip-link', async () => {
       const fixture = TestBed.createComponent(App);
       await fixture.whenStable();
       const compiled = fixture.nativeElement as HTMLElement;
       const skipLink = compiled.querySelector('.skip-link');
       expect(skipLink?.getAttribute('href')).toBe('#main-content');
+    });
+
+    it('should render Battleheart warband crest bar and illustrated overworld map', async () => {
+      const fixture = TestBed.createComponent(HomeComponent);
+      await fixture.whenStable();
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('.brand-title')?.textContent).toContain('Battleheart');
+      expect(compiled.querySelector('.parchment-map-stage')).toBeTruthy();
+      expect(compiled.querySelectorAll('.map-pin-node').length).toBeGreaterThanOrEqual(8);
     });
   });
 

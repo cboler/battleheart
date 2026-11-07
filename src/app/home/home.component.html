@@ -1,197 +1,325 @@
 <div class="bh-shell">
-  <!-- TOP REALM BAR (shown when not in active combat) -->
+  <!-- ===================================================================== -->
+  <!-- WARBAND WORLD MAP & TOWN BUILDINGS (When Not in Active Combat)        -->
+  <!-- ===================================================================== -->
   @if (!combat.isRunning()) {
-    <section class="realm-banner" aria-label="Warband Command">
-      <div class="realm-top-row">
-        <div class="title-block">
-          <h1 id="starter-title" class="game-title">Battleheart</h1>
-          <p class="game-subtitle">
-            Tactical Line-Drawing Party RPG • Drag from Heroes to Allies or Foes
-          </p>
-        </div>
-
-        <div class="treasury-strip">
-          <div class="gold-pill" id="gold-display" aria-label="Party Gold">
-            <span class="coin-icon" aria-hidden="true">🪙</span>
-            <span class="gold-amount">{{ gameState.gold() }}</span>
-            <span class="gold-label">Gold</span>
-          </div>
-
-          <div class="slot-pill">
-            <span class="slot-label">Save:</span>
-            @for (slot of [1, 2, 3]; track slot) {
-              <button
-                type="button"
-                class="slot-btn"
-                [class.active]="gameState.activeSlot() === slot"
-                (click)="switchSlot(slot)"
-                [attr.aria-label]="'Save Slot ' + slot"
-              >
-                #{{ slot }}
-              </button>
-            }
-          </div>
-
-          <button
-            type="button"
-            class="icon-btn"
-            (click)="audio.toggleMute()"
-            [attr.aria-label]="audio.muted() ? 'Unmute Sound' : 'Mute Sound'"
-          >
-            {{ audio.muted() ? '🔇' : '🔊' }}
-          </button>
+    <!-- Ornate Top Warband Crest Bar -->
+    <header class="warband-crest-bar" role="banner">
+      <div class="crest-brand">
+        <span class="crest-emblem" aria-hidden="true">⚔️</span>
+        <div class="crest-titles">
+          <h1 id="starter-title" class="brand-title">Battleheart</h1>
+          <span class="crest-tagline">Tactical Line-Drawing RPG</span>
         </div>
       </div>
 
-      <!-- ACTIVE PARTY STRIP (Up to 4 Heroes) -->
-      <div class="party-bar" aria-label="Active Party">
-        <span class="party-bar-label">Active Party ({{ gameState.partyHeroes().length }}/4):</span>
-        <div class="party-avatars">
+      <!-- Active Party Medallions (Up to 4 Heroes) -->
+      <div class="party-medallions" aria-label="Active Warband Party">
+        <span class="medallions-label">Party ({{ gameState.partyHeroes().length }}/4)</span>
+        <div class="medallion-list">
           @for (hero of gameState.partyHeroes(); track hero.def.id) {
             <button
               type="button"
-              class="party-chip"
+              class="hero-medallion"
               [class.selected]="inspectedHeroId() === hero.def.id"
-              (click)="inspectHero(hero.def.id)"
+              [style.borderColor]="hero.def.accentColor"
+              (click)="inspectHeroAndOpenArmory(hero.def.id)"
+              [title]="hero.def.name + ' (Lv.' + hero.save.level + ' ' + hero.def.title + ')'"
             >
-              <img [src]="hero.def.svgAsset" [alt]="hero.def.name" class="chip-avatar" />
-              <div class="chip-meta">
-                <span class="chip-name">{{ hero.def.name }}</span>
-                <span class="chip-lvl">Lv.{{ hero.save.level }} {{ hero.def.title }}</span>
-              </div>
+              <img [src]="hero.def.svgAsset" [alt]="hero.def.name" />
+              <span class="medallion-lvl">{{ hero.save.level }}</span>
             </button>
           }
         </div>
       </div>
 
-      <!-- NAVIGATION TABS -->
-      <div class="hub-tabs" role="tablist" aria-label="Kingdom Sections">
-        <button
-          type="button"
-          role="tab"
-          id="tab-map"
-          class="hub-tab"
-          [class.active]="activeTab() === 'map'"
-          [attr.aria-selected]="activeTab() === 'map'"
-          (click)="setTab('map')"
-        >
-          🗺️ World Map
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id="tab-tavern"
-          class="hub-tab"
-          [class.active]="activeTab() === 'tavern'"
-          [attr.aria-selected]="activeTab() === 'tavern'"
-          (click)="setTab('tavern')"
-        >
-          🍺 Tavern &amp; Party
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id="tab-armory"
-          class="hub-tab"
-          [class.active]="activeTab() === 'armory'"
-          [attr.aria-selected]="activeTab() === 'armory'"
-          (click)="setTab('armory')"
-        >
-          ⚒️ Armory &amp; Relics
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id="tab-academy"
-          class="hub-tab"
-          [class.active]="activeTab() === 'academy'"
-          [attr.aria-selected]="activeTab() === 'academy'"
-          (click)="setTab('academy')"
-        >
-          📜 Academy Skills
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id="tab-saves"
-          class="hub-tab"
-          [class.active]="activeTab() === 'saves'"
-          [attr.aria-selected]="activeTab() === 'saves'"
-          (click)="setTab('saves')"
-        >
-          💾 Saves &amp; Art
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id="tab-about"
-          class="hub-tab"
-          [class.active]="activeTab() === 'about'"
-          [attr.aria-selected]="activeTab() === 'about'"
-          (click)="setTab('about')"
-        >
-          ℹ️ About &amp; Credits
-        </button>
-      </div>
-    </section>
+      <!-- Royal Treasury & Controls -->
+      <div class="treasury-strip">
+        <div class="gold-coffer" id="gold-display" aria-label="Warband Gold">
+          <span class="coin-glyph" aria-hidden="true">🪙</span>
+          <span class="gold-value">{{ gameState.gold() }}</span>
+        </div>
 
-    <!-- TAB 1: WORLD MAP & CAMPAIGN STAGES -->
-    @if (activeTab() === 'map') {
-      <section class="hub-panel" aria-label="Campaign Stages">
-        <div class="stages-grid">
-          @for (entry of gameState.stages(); track entry.stage.id) {
-            <article
-              class="stage-card"
-              [class.locked]="!entry.unlocked"
-              [class.completed]="entry.completed"
-              [class.arena-card]="entry.stage.isArena"
+        <div class="save-slots-pill" aria-label="Save Slots">
+          @for (slot of [1, 2, 3]; track slot) {
+            <button
+              type="button"
+              class="slot-chip"
+              [class.active]="gameState.activeSlot() === slot"
+              (click)="switchSlot(slot)"
+              [attr.aria-label]="'Save Slot ' + slot"
             >
-              <div class="stage-card-header">
-                <span class="stage-badge">
-                  @if (entry.stage.isArena) {
-                    🏆 Best: {{ gameState.arenaBestKills() }} Kills
-                  } @else if (entry.completed) {
-                    {{ '⭐'.repeat(entry.stars) }}
-                  } @else if (entry.unlocked) {
-                    ⚔️ Ready
-                  } @else {
-                    🔒 Locked
-                  }
-                </span>
-                <span class="stage-rec">Rec. Lv.{{ entry.stage.recommendedLevel }}</span>
-              </div>
-
-              <h2 class="stage-name">{{ entry.stage.name }}</h2>
-              <p class="stage-desc">{{ entry.stage.subtitle }}</p>
-
-              <div class="stage-footer">
-                <div class="stage-rewards">
-                  <span>🪙 +{{ entry.stage.goldReward }}g</span>
-                  <span>✨ +{{ entry.stage.xpReward }} XP</span>
-                </div>
-                <button
-                  type="button"
-                  class="btn-battle"
-                  [id]="'start-' + entry.stage.id"
-                  [disabled]="!entry.unlocked"
-                  (click)="launchStage(entry.stage)"
-                >
-                  {{ entry.stage.isArena ? 'Enter Arena' : 'Enter Battle' }}
-                </button>
-              </div>
-            </article>
+              S{{ slot }}
+            </button>
           }
         </div>
+
+        <button
+          type="button"
+          class="crest-icon-btn"
+          (click)="audio.toggleMute()"
+          [attr.aria-label]="audio.muted() ? 'Unmute Audio' : 'Mute Audio'"
+        >
+          {{ audio.muted() ? '🔇' : '🔊' }}
+        </button>
+
+        <a
+          routerLink="/status"
+          id="nav-link-status"
+          class="crest-icon-btn crest-status-link"
+          title="Runtime & PWA Diagnostics"
+          aria-label="Status Diagnostics"
+        >
+          ⚙️
+        </a>
+      </div>
+    </header>
+
+    <!-- Bottom/Top Town Building Navigation Ribbon -->
+    <nav class="kingdom-ribbon" role="tablist" aria-label="Kingdom Buildings">
+      <button
+        type="button"
+        role="tab"
+        id="tab-map"
+        class="ribbon-btn"
+        [class.active]="activeTab() === 'map'"
+        [attr.aria-selected]="activeTab() === 'map'"
+        (click)="setTab('map')"
+      >
+        🗺️ World Map
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="tab-tavern"
+        class="ribbon-btn"
+        [class.active]="activeTab() === 'tavern'"
+        [attr.aria-selected]="activeTab() === 'tavern'"
+        (click)="setTab('tavern')"
+      >
+        🍺 TavernKeep
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="tab-armory"
+        class="ribbon-btn"
+        [class.active]="activeTab() === 'armory'"
+        [attr.aria-selected]="activeTab() === 'armory'"
+        (click)="setTab('armory')"
+      >
+        ⚒️ Merchant &amp; Armory
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="tab-academy"
+        class="ribbon-btn"
+        [class.active]="activeTab() === 'academy'"
+        [attr.aria-selected]="activeTab() === 'academy'"
+        (click)="setTab('academy')"
+      >
+        📜 Academy Skills
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="tab-saves"
+        class="ribbon-btn"
+        [class.active]="activeTab() === 'saves'"
+        [attr.aria-selected]="activeTab() === 'saves'"
+        (click)="setTab('saves')"
+      >
+        💾 Chronicles &amp; Art
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="tab-about"
+        class="ribbon-btn"
+        [class.active]="activeTab() === 'about'"
+        [attr.aria-selected]="activeTab() === 'about'"
+        (click)="setTab('about')"
+      >
+        ℹ️ Tribute &amp; Credits
+      </button>
+    </nav>
+
+    <!-- =================================================================== -->
+    <!-- VIEW 1: ILLUSTRATED OVERWORLD PARCHMENT MAP                         -->
+    <!-- =================================================================== -->
+    @if (activeTab() === 'map') {
+      <section class="overworld-layout" aria-label="Overworld Campaign Map">
+        <!-- Illustrated Parchment Canvas with Clickable Flag Nodes -->
+        <div class="parchment-map-stage">
+          <img
+            src="assets/svg/backdrops/world-map.svg"
+            alt="Illustrated Parchment Map of the Realm"
+            class="parchment-bg"
+            draggable="false"
+          />
+
+          <!-- Dotted Marching Road SVG connecting campaign nodes -->
+          <svg
+            class="map-road-svg"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <polyline
+              [attr.points]="campaignRoadPoints()"
+              fill="none"
+              stroke="#5c2810"
+              stroke-width="0.9"
+              stroke-dasharray="1.8 1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+
+          <!-- Interactive Stage Pins on the Map -->
+          @for (entry of gameState.stages(); track entry.stage.id) {
+            <button
+              type="button"
+              class="map-pin-node"
+              [class.selected]="selectedStageId() === entry.stage.id"
+              [class.completed]="entry.completed"
+              [class.locked]="!entry.unlocked"
+              [class.is-boss]="
+                entry.stage.name.includes('BOSS') || entry.stage.name.includes('FINALE')
+              "
+              [class.is-arena]="entry.stage.isArena"
+              [style.left.%]="entry.stage.mapX"
+              [style.top.%]="entry.stage.mapY"
+              (click)="selectMapNode(entry.stage.id)"
+              [attr.aria-label]="entry.stage.name"
+            >
+              <span class="pin-emblem">
+                @if (entry.stage.isArena) {
+                  🏟️
+                } @else if (!entry.unlocked) {
+                  🔒
+                } @else if (
+                  entry.stage.name.includes('BOSS') || entry.stage.name.includes('FINALE')
+                ) {
+                  💀
+                } @else if (entry.completed) {
+                  🚩
+                } @else {
+                  ⚔️
+                }
+              </span>
+              <span class="pin-label">{{ entry.stage.index }}</span>
+              @if (entry.stars > 0) {
+                <span class="pin-stars">{{ '★'.repeat(entry.stars) }}</span>
+              }
+            </button>
+          }
+        </div>
+
+        <!-- Selected Stage Parchment Dossier & Quick Launch List -->
+        <aside class="quest-scroll-panel" aria-label="Selected Stage Briefing">
+          @if (selectedStageEntry(); as sel) {
+            <div class="scroll-dossier">
+              <div class="scroll-eyebrow">
+                <span>
+                  @if (sel.stage.isArena) {
+                    🏆 Endless Colosseum (Best: {{ gameState.arenaBestKills() }} Kills)
+                  } @else if (sel.completed) {
+                    {{ '⭐'.repeat(sel.stars) }} Cleared
+                  } @else if (sel.unlocked) {
+                    ⚔️ Unlocked Quest
+                  } @else {
+                    🔒 Clear Previous Stage to Unlock
+                  }
+                </span>
+                <span class="rec-pill">Rec. Lv.{{ sel.stage.recommendedLevel }}</span>
+              </div>
+
+              <h2 class="scroll-title">{{ sel.stage.name }}</h2>
+              <p class="scroll-lore">{{ sel.stage.subtitle }}</p>
+
+              <div class="scroll-bounty">
+                <div>
+                  <span class="bounty-label">Gold Bounty</span>
+                  <strong>🪙 +{{ sel.stage.goldReward }}g</strong>
+                </div>
+                <div>
+                  <span class="bounty-label">Party XP</span>
+                  <strong>✨ +{{ sel.stage.xpReward }} XP</strong>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="btn-march-battle"
+                [id]="'start-' + sel.stage.id"
+                [disabled]="!sel.unlocked"
+                (click)="launchStage(sel.stage)"
+              >
+                ⚔️ {{ sel.stage.isArena ? 'Enter Doomvale Arena' : 'To Battle!' }}
+              </button>
+            </div>
+          }
+
+          <!-- Stage Quick-Select Roster -->
+          <div class="stage-list-compact">
+            @for (entry of gameState.stages(); track entry.stage.id) {
+              <div
+                class="stage-card"
+                [class.selected]="selectedStageId() === entry.stage.id"
+                [class.locked]="!entry.unlocked"
+                (click)="selectMapNode(entry.stage.id)"
+                (keydown.enter)="selectMapNode(entry.stage.id)"
+                role="button"
+                tabindex="0"
+              >
+                <div class="stage-row-main">
+                  <span class="stage-row-name">{{ entry.stage.name }}</span>
+                  <span class="stage-row-stars">
+                    @if (entry.stage.isArena) {
+                      🏆 {{ gameState.arenaBestKills() }}
+                    } @else if (entry.completed) {
+                      {{ '⭐'.repeat(entry.stars) }}
+                    } @else if (entry.unlocked) {
+                      ⚔️
+                    } @else {
+                      🔒
+                    }
+                  </span>
+                </div>
+                @if (selectedStageId() !== entry.stage.id && entry.unlocked) {
+                  <button
+                    type="button"
+                    class="btn-quick-fight"
+                    [id]="'start-' + entry.stage.id"
+                    (click)="$event.stopPropagation(); launchStage(entry.stage)"
+                  >
+                    Fight
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        </aside>
       </section>
     }
 
-    <!-- TAB 2: TAVERN & PARTY ROSTER -->
+    <!-- =================================================================== -->
+    <!-- VIEW 2: TAVERN & PARTY ROSTER                                       -->
+    <!-- =================================================================== -->
     @if (activeTab() === 'tavern') {
-      <section class="hub-panel" aria-label="Tavern Roster">
-        <p class="panel-intro">
-          Recruit up to 8 iconic hero classes and choose up to <strong>4 heroes</strong> for your
-          active battle party.
-        </p>
+      <section class="parchment-chamber" aria-label="Tavern Roster">
+        <div class="chamber-header">
+          <div>
+            <h2>🍺 The King's Hearth Tavern</h2>
+            <p>
+              Recruit up to 8 legendary heroes and assign up to <strong>4 champions</strong> to
+              march in your active battle party.
+            </p>
+          </div>
+        </div>
+
         <div class="roster-grid">
           @for (h of gameState.roster(); track h.def.id) {
             <article
@@ -200,7 +328,9 @@
               [class.locked]="!h.save.unlocked"
             >
               <div class="hero-card-top">
-                <img [src]="h.def.svgAsset" [alt]="h.def.name" class="hero-portrait" />
+                <div class="portrait-pedestal" [style.borderColor]="h.def.accentColor">
+                  <img [src]="h.def.svgAsset" [alt]="h.def.name" class="hero-portrait" />
+                </div>
                 <div class="hero-identity">
                   <span class="role-tag" [style.borderColor]="h.def.accentColor">
                     {{ h.def.role.toUpperCase() }}
@@ -222,11 +352,11 @@
                 @if (!h.save.unlocked) {
                   <button
                     type="button"
-                    class="btn-primary"
+                    class="btn-gold"
                     [disabled]="gameState.gold() < h.def.hireCost"
                     (click)="gameState.hireHero(h.def.id)"
                   >
-                    🪙 Hire ({{ h.def.hireCost }}g)
+                    🪙 Recruit Hero ({{ h.def.hireCost }}g)
                   </button>
                 } @else {
                   <button
@@ -239,10 +369,10 @@
                   </button>
                   <button
                     type="button"
-                    class="btn-secondary"
+                    class="btn-wood"
                     (click)="inspectHeroAndOpenArmory(h.def.id)"
                   >
-                    Gear / Skills
+                    ⚒️ Inspect Gear &amp; Skills
                   </button>
                 }
               </div>
@@ -252,9 +382,11 @@
       </section>
     }
 
-    <!-- TAB 3: ARMORY & TRINKETS -->
+    <!-- =================================================================== -->
+    <!-- VIEW 3: BLACKSMITH ARMORY & RELIC TRINKETS                          -->
+    <!-- =================================================================== -->
     @if (activeTab() === 'armory') {
-      <section class="hub-panel" aria-label="Blacksmith Armory">
+      <section class="parchment-chamber" aria-label="Blacksmith Armory">
         <div class="hero-selector-strip">
           @for (h of gameState.roster(); track h.def.id) {
             @if (h.save.unlocked) {
@@ -274,10 +406,15 @@
         @if (inspectedHero(); as hero) {
           <div class="armory-workbench">
             <div class="hero-showcase">
-              <img [src]="hero.def.svgAsset" [alt]="hero.def.name" class="showcase-svg" />
-              <h3>{{ hero.def.name }} ({{ hero.def.title }})</h3>
+              <div class="showcase-pedestal">
+                <img [src]="hero.def.svgAsset" [alt]="hero.def.name" class="showcase-svg" />
+              </div>
+              <h3>{{ hero.def.name }}</h3>
               <p class="xp-bar-label">
-                Level {{ hero.save.level }} • XP: {{ hero.save.xp }} / {{ hero.nextLevelXp }}
+                {{ hero.def.title }} • Lv.{{ hero.save.level }} ({{ hero.save.xp }}/{{
+                  hero.nextLevelXp
+                }}
+                XP)
               </p>
               <div class="stat-grid">
                 <div><strong>Max HP:</strong> {{ hero.maxHp }}</div>
@@ -297,23 +434,22 @@
                 <h4>⚔️ {{ hero.weaponName }}</h4>
                 @if (nextWeaponTier(hero.save.weaponTier); as nextW) {
                   <p>
-                    Upgrade to
-                    <strong>{{ hero.def.weaponNames[hero.save.weaponTier] }}</strong> (+{{
+                    Forge <strong>{{ hero.def.weaponNames[hero.save.weaponTier] }}</strong> (+{{
                       nextW.bonusStat
                     }}
                     Power)
                   </p>
                   <button
                     type="button"
-                    class="btn-primary"
+                    class="btn-gold"
                     id="upgrade-weapon-btn"
                     [disabled]="gameState.gold() < nextW.cost"
                     (click)="gameState.upgradeWeapon(hero.def.id)"
                   >
-                    🪙 Forge Upgrade ({{ nextW.cost }}g)
+                    🪙 Forge Weapon ({{ nextW.cost }}g)
                   </button>
                 } @else {
-                  <p class="maxed-badge">🌟 Celestial Tier Forged!</p>
+                  <p class="maxed-badge">🌟 Celestial Masterwork Forged!</p>
                 }
               </div>
 
@@ -323,28 +459,28 @@
                 <h4>🛡️ {{ hero.armorName }}</h4>
                 @if (nextArmorTier(hero.save.armorTier); as nextA) {
                   <p>
-                    Upgrade to <strong>{{ hero.def.armorNames[hero.save.armorTier] }}</strong> (+{{
+                    Forge <strong>{{ hero.def.armorNames[hero.save.armorTier] }}</strong> (+{{
                       nextA.bonusStat
                     }}
                     Max HP)
                   </p>
                   <button
                     type="button"
-                    class="btn-primary"
+                    class="btn-gold"
                     id="upgrade-armor-btn"
                     [disabled]="gameState.gold() < nextA.cost"
                     (click)="gameState.upgradeArmor(hero.def.id)"
                   >
-                    🪙 Forge Upgrade ({{ nextA.cost }}g)
+                    🪙 Forge Armor ({{ nextA.cost }}g)
                   </button>
                 } @else {
-                  <p class="maxed-badge">🌟 Celestial Tier Forged!</p>
+                  <p class="maxed-badge">🌟 Celestial Masterwork Forged!</p>
                 }
               </div>
             </div>
           </div>
 
-          <h3 class="subsection-heading">Relic Trinkets (1 Equipped per Hero)</h3>
+          <h3 class="subsection-heading">Royal Relic Trinkets (1 Equipped per Hero)</h3>
           <div class="trinkets-grid">
             @for (trinket of trinkets; track trinket.id) {
               @let owned = gameState.profile().ownedTrinkets.includes(trinket.id);
@@ -359,16 +495,16 @@
                 </div>
                 <button
                   type="button"
-                  class="btn-secondary"
+                  class="btn-wood"
                   [disabled]="!owned && gameState.gold() < trinket.cost"
                   (click)="gameState.buyOrEquipTrinket(hero.def.id, trinket.id)"
                 >
                   @if (equipped) {
-                    ✓ Equipped (Click to Unequip)
+                    ✓ Equipped on {{ hero.def.name }} (Unequip)
                   } @else if (owned) {
                     Equip on {{ hero.def.name }}
                   } @else {
-                    🪙 Buy &amp; Equip ({{ trinket.cost }}g)
+                    🪙 Purchase Relic ({{ trinket.cost }}g)
                   }
                 </button>
               </div>
@@ -378,9 +514,11 @@
       </section>
     }
 
-    <!-- TAB 4: ACADEMY SKILL TREES -->
+    <!-- =================================================================== -->
+    <!-- VIEW 4: ACADEMY SKILL TREES                                         -->
+    <!-- =================================================================== -->
     @if (activeTab() === 'academy') {
-      <section class="hub-panel" aria-label="Academy Skill Trees">
+      <section class="parchment-chamber" aria-label="Academy Skill Trees">
         <div class="hero-selector-strip">
           @for (h of gameState.roster(); track h.def.id) {
             @if (h.save.unlocked) {
@@ -405,7 +543,7 @@
                 <h4>
                   Signature Skill: {{ hero.def.primaryActiveSkill.name }} ({{
                     hero.def.primaryActiveSkill.cooldownSec
-                  }}s CD)
+                  }}s Cooldown)
                 </h4>
                 <p>{{ hero.def.primaryActiveSkill.description }}</p>
               </div>
@@ -459,22 +597,24 @@
       </section>
     }
 
-    <!-- TAB 5: SAVES, CUSTOM SVG ASSET GUIDE & DIAGNOSTICS -->
+    <!-- =================================================================== -->
+    <!-- VIEW 5: CHRONICLES (LOCAL SAVES) & CUSTOM SVG ART GUIDE             -->
+    <!-- =================================================================== -->
     @if (activeTab() === 'saves') {
-      <section class="hub-panel" aria-label="Save Data and Custom SVG Assets">
+      <section class="parchment-chamber" aria-label="Save Data and Custom SVG Assets">
         <div class="saves-grid">
           <div class="save-card">
-            <h3>💾 Local Save Backup (Slot #{{ gameState.activeSlot() }})</h3>
+            <h3>💾 Warband Chronicles (Save Slot #{{ gameState.activeSlot() }})</h3>
             <p>
-              Progress is saved automatically to your browser's LocalStorage. You can also export or
-              import save JSON strings below to share between devices.
+              Your warband progress is automatically recorded in local storage. Export or import a
+              JSON scroll below to transfer saves across devices.
             </p>
             <div class="save-actions">
-              <button type="button" class="btn-secondary" (click)="handleExportSave()">
-                📋 Export Save JSON
+              <button type="button" class="btn-wood" (click)="handleExportSave()">
+                📋 Export Save Scroll
               </button>
               <button type="button" class="btn-danger" (click)="handleResetSlot()">
-                🗑️ Reset Current Slot
+                🗑️ Reset Slot #{{ gameState.activeSlot() }}
               </button>
             </div>
             @if (saveJsonText()) {
@@ -485,8 +625,8 @@
                 (input)="onSaveJsonInput($event)"
                 aria-label="Save Data JSON"
               ></textarea>
-              <button type="button" class="btn-primary" (click)="handleImportSave()">
-                ⬆️ Import Save from Box Above
+              <button type="button" class="btn-gold" (click)="handleImportSave()">
+                ⬆️ Import Save Scroll
               </button>
             }
             @if (saveStatusMsg()) {
@@ -497,8 +637,8 @@
           <div class="save-card">
             <h3>🎨 Custom SVG Asset Swap Guide</h3>
             <p>
-              All character and backdrop sprites are standalone SVG files in
-              <code>public/assets/svg/</code> with a <code>0 0 120 120</code> viewBox:
+              All character and stage sprites are standalone SVG files in
+              <code>public/assets/svg/</code> (`0 0 120 120` viewBox for characters):
             </p>
             <ul class="asset-list">
               <li>
@@ -514,22 +654,22 @@
                 <code>dragon-whelp.svg</code>, etc.
               </li>
               <li>
-                <strong>Backdrops:</strong>
-                <code>public/assets/svg/backdrops/meadow.svg</code>, <code>forest.svg</code>,
-                <code>crypt.svg</code>, <code>throne.svg</code>
+                <strong>Backdrops &amp; World Map:</strong>
+                <code>public/assets/svg/backdrops/world-map.svg</code>, <code>meadow.svg</code>,
+                <code>forest.svg</code>, <code>crypt.svg</code>, <code>throne.svg</code>
               </li>
             </ul>
-            <a routerLink="/status" class="btn-secondary" id="view-status-btn">
-              🔍 Open PWA Runtime &amp; Routing Diagnostics
-            </a>
+            <a routerLink="/status" class="btn-wood"> 🔍 System &amp; PWA Diagnostics </a>
           </div>
         </div>
       </section>
     }
 
-    <!-- TAB 6: ABOUT, CREDITS & PRESERVATION DISCLAIMER -->
+    <!-- =================================================================== -->
+    <!-- VIEW 6: ABOUT, MIKA MOBILE CREDITS & PRESERVATION DISCLAIMER        -->
+    <!-- =================================================================== -->
     @if (activeTab() === 'about') {
-      <section class="hub-panel" aria-label="About and Preservation Disclaimer">
+      <section class="parchment-chamber" aria-label="About and Preservation Disclaimer">
         <div class="about-card">
           <h3>❤️ Tribute, Credits &amp; Preservation Disclaimer</h3>
           <p>
@@ -584,42 +724,10 @@
   }
 
   <!-- ===================================================================== -->
-  <!-- REAL-TIME BATTLEFIELD ARENA                                           -->
+  <!-- REAL-TIME BATTLEFIELD ARENA (CLASSIC BATTLEHEART HUD LAYOUT)          -->
   <!-- ===================================================================== -->
   @if (combat.isRunning() && combat.activeStage(); as stage) {
     <section class="battle-screen" aria-label="Battlefield Arena">
-      <!-- Top Battle HUD Bar -->
-      <div class="battle-hud-top">
-        <div class="stage-info-pill">
-          <strong>{{ stage.name }}</strong>
-          <span class="wave-badge">
-            @if (stage.isArena) {
-              Wave {{ combat.waveIndex() + 1 }} • Kills: {{ combat.arenaKills() }}
-            } @else {
-              Wave {{ combat.waveIndex() + 1 }} / {{ combat.totalWaves() }}
-            }
-          </span>
-        </div>
-
-        <div class="controls-hint">
-          @if (gamepad.connected()) {
-            <span>🎮 LB/RB: Hero • Stick+A: Command • X/Y: Skills</span>
-          } @else {
-            <span>🖱️ Drag from Hero to Enemy, Ally, or Ground • Keys 1-4 &amp; Q/W</span>
-          }
-        </div>
-
-        <div class="battle-top-actions">
-          <button type="button" class="hud-btn" (click)="combat.togglePause()">
-            {{ combat.isPaused() ? '▶️ Resume' : '⏸️ Pause' }}
-          </button>
-          <button type="button" class="hud-btn hud-btn-retreat" (click)="combat.stopBattle()">
-            🏳️ Retreat
-          </button>
-        </div>
-      </div>
-
-      <!-- Interactive 2D Side-Perspective Arena -->
       <div
         #arenaRef
         id="battlefield-arena"
@@ -637,13 +745,107 @@
           draggable="false"
         />
 
-        <!-- SVG Tactical Vector Overlay (Persistent Target Lines + Active Drag Line + AoE Rings) -->
+        <!-- TOP-LEFT CLASSIC BATTLEHEART HERO PORTRAIT STRIP -->
+        <div class="bh-top-left-portraits" aria-label="Party Portraits">
+          @for (hero of combat.heroes(); track hero.uid; let idx = $index) {
+            <button
+              type="button"
+              class="bh-portrait-badge"
+              [class.selected]="combat.selectedHeroUid() === hero.uid"
+              [style.borderColor]="hero.accentColor"
+              (pointerdown)="$event.stopPropagation()"
+              (click)="combat.selectHero(hero.uid)"
+            >
+              <img [src]="hero.svgAsset" [alt]="hero.name" class="bh-portrait-img" />
+              <div class="bh-portrait-bars">
+                <span class="bh-portrait-name">{{ hero.name }}</span>
+                <div class="bh-portrait-hp-track">
+                  <div
+                    class="bh-portrait-hp-fill"
+                    [style.width.%]="(hero.hp / hero.maxHp) * 100"
+                  ></div>
+                </div>
+              </div>
+              <span class="bh-hotkey-pip">{{ idx + 1 }}</span>
+            </button>
+          }
+        </div>
+
+        <!-- TOP-RIGHT STAGE WAVE BANNER & PAUSE/RETREAT -->
+        <div class="bh-top-right-controls" (pointerdown)="$event.stopPropagation()">
+          <div class="bh-wave-crest">
+            <span class="bh-stage-title">{{ stage.name }}</span>
+            <span class="bh-wave-count">
+              @if (stage.isArena) {
+                Wave {{ combat.waveIndex() + 1 }} • Kills: {{ combat.arenaKills() }}
+              } @else {
+                Wave {{ combat.waveIndex() + 1 }} / {{ combat.totalWaves() }}
+              }
+            </span>
+          </div>
+          <button type="button" class="hud-btn" (click)="combat.togglePause()">
+            {{ combat.isPaused() ? '▶️' : '⏸️' }}
+          </button>
+          <button type="button" class="hud-btn hud-btn-retreat" (click)="combat.stopBattle()">
+            🏳️ Retreat
+          </button>
+        </div>
+
+        <!-- SVG Tactical Vector Overlay (Glowing Marching Ants + Target Reticles + Projectiles) -->
         <svg
           class="tactical-svg-layer"
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
           aria-hidden="true"
         >
+          <!-- Boss Ground-Telegraph Danger Zones (Kite heroes out before fill completes!) -->
+          @for (tel of combat.telegraphs(); track tel.id) {
+            <ellipse
+              [attr.cx]="tel.x"
+              [attr.cy]="tel.y"
+              [attr.rx]="tel.radius"
+              [attr.ry]="tel.radius * 0.55"
+              fill="rgba(239, 68, 68, 0.14)"
+              [attr.stroke]="tel.color"
+              stroke-width="0.7"
+              stroke-dasharray="2 1.2"
+            />
+            <ellipse
+              [attr.cx]="tel.x"
+              [attr.cy]="tel.y"
+              [attr.rx]="tel.radius * (tel.elapsed / tel.duration)"
+              [attr.ry]="tel.radius * 0.55 * (tel.elapsed / tel.duration)"
+              fill="rgba(239, 68, 68, 0.36)"
+              [attr.stroke]="tel.color"
+              stroke-width="0.4"
+            />
+          }
+
+          <!-- Continuous Cleric / Healer Emerald-Gold Tether Beams -->
+          @for (beam of combat.healerBeams(); track beam.id) {
+            <line
+              [attr.x1]="beam.x1"
+              [attr.y1]="beam.y1"
+              [attr.x2]="beam.x2"
+              [attr.y2]="beam.y2"
+              stroke="#34d399"
+              stroke-width="1.8"
+              opacity="0.28"
+              stroke-linecap="round"
+            />
+            <line
+              class="marching-heal-beam"
+              [attr.x1]="beam.x1"
+              [attr.y1]="beam.y1"
+              [attr.x2]="beam.x2"
+              [attr.y2]="beam.y2"
+              stroke="#fde047"
+              stroke-width="0.75"
+              stroke-dasharray="1.6 1.2"
+              stroke-linecap="round"
+            />
+          }
+
           <!-- AoE Ring Effects -->
           @for (ring of combat.ringEffects(); track ring.id) {
             <ellipse
@@ -653,7 +855,7 @@
               [attr.ry]="ring.radius * 0.55"
               fill="none"
               [attr.stroke]="ring.color"
-              stroke-width="0.9"
+              stroke-width="1.1"
               [attr.opacity]="ring.life / ring.maxLife"
             />
           }
@@ -661,25 +863,39 @@
           <!-- Persistent Command Lines for Heroes -->
           @for (hero of combat.heroes(); track hero.uid) {
             @if (getHeroCommandTargetPos(hero); as targetPos) {
+              <!-- Outer Glow Line -->
               <line
                 [attr.x1]="hero.x"
                 [attr.y1]="hero.y"
                 [attr.x2]="targetPos.x"
                 [attr.y2]="targetPos.y"
                 [attr.stroke]="targetPos.color"
-                stroke-width="0.6"
-                stroke-dasharray="1.8 1.4"
-                opacity="0.72"
+                stroke-width="1.3"
+                opacity="0.28"
+                stroke-linecap="round"
               />
+              <!-- Marching Dashed Line -->
+              <line
+                class="marching-command-line"
+                [attr.x1]="hero.x"
+                [attr.y1]="hero.y"
+                [attr.x2]="targetPos.x"
+                [attr.y2]="targetPos.y"
+                [attr.stroke]="targetPos.color"
+                stroke-width="0.65"
+                stroke-dasharray="1.8 1.4"
+                stroke-linecap="round"
+              />
+              <!-- Target Foot Ring -->
               <ellipse
                 [attr.cx]="targetPos.x"
                 [attr.cy]="targetPos.y"
-                rx="3.2"
-                ry="1.8"
+                rx="3.8"
+                ry="2.1"
                 fill="none"
                 [attr.stroke]="targetPos.color"
-                stroke-width="0.55"
-                opacity="0.8"
+                stroke-width="0.65"
+                opacity="0.85"
               />
             }
           }
@@ -692,17 +908,28 @@
               [attr.x2]="dragCurrentX()"
               [attr.y2]="dragCurrentY()"
               [attr.stroke]="dragLineColor()"
-              stroke-width="1.15"
+              stroke-width="2.2"
+              opacity="0.3"
+              stroke-linecap="round"
+            />
+            <line
+              [attr.x1]="dragHero.x"
+              [attr.y1]="dragHero.y"
+              [attr.x2]="dragCurrentX()"
+              [attr.y2]="dragCurrentY()"
+              [attr.stroke]="dragLineColor()"
+              stroke-width="1.1"
+              stroke-dasharray="2 1.2"
               stroke-linecap="round"
             />
             <ellipse
               [attr.cx]="dragCurrentX()"
               [attr.cy]="dragCurrentY()"
-              rx="4.4"
-              ry="2.5"
-              fill="rgba(255, 255, 255, 0.15)"
+              rx="4.8"
+              ry="2.6"
+              fill="rgba(255, 255, 255, 0.22)"
               [attr.stroke]="dragLineColor()"
-              stroke-width="0.8"
+              stroke-width="0.9"
             />
           }
 
@@ -711,7 +938,7 @@
             <circle
               [attr.cx]="proj.x"
               [attr.cy]="proj.y"
-              [attr.r]="proj.isHeal ? 1.4 : 1.2"
+              [attr.r]="proj.isHeal ? 1.5 : 1.3"
               [attr.fill]="proj.color"
               stroke="#0f172a"
               stroke-width="0.3"
@@ -719,7 +946,7 @@
           }
         </svg>
 
-        <!-- Gamepad Reticle (visible when using controller or keyboard) -->
+        <!-- Gamepad Reticle -->
         @if (gamepad.activeMode() === 'gamepad') {
           <div
             class="gamepad-reticle"
@@ -730,7 +957,7 @@
           </div>
         }
 
-        <!-- Combat Units (Heroes & Monsters sorted by Y depth via style.zIndex) -->
+        <!-- Combat Units (Heroes & Monsters sorted by Y depth) -->
         @for (unit of combat.units(); track unit.uid) {
           <div
             class="arena-unit"
@@ -739,6 +966,7 @@
             [class.is-boss]="unit.isBoss"
             [class.is-selected]="combat.selectedHeroUid() === unit.uid"
             [class.is-hovered-target]="hoveredTargetUid() === unit.uid"
+            [class.is-moving]="unit.isMoving"
             [class.is-attacking]="unit.attackAnimTimer > 0"
             [class.is-hurt]="unit.hurtAnimTimer > 0"
             [class.is-stunned]="unit.stunTimer > 0"
@@ -753,6 +981,20 @@
               class="unit-plinth"
               [style.borderColor]="unit.isHero ? unit.accentColor : '#ef4444'"
             ></div>
+
+            <!-- Protective Shield Aura Dome -->
+            @if (unit.shieldTimer > 0) {
+              <div class="shield-aura-dome" aria-hidden="true"></div>
+            }
+
+            <!-- Melee Weapon Slash Arc -->
+            @if (unit.attackAnimTimer > 0 && unit.attackRange <= 20) {
+              <div
+                class="melee-slash-arc"
+                [class.facing-left]="unit.facing === 'left'"
+                aria-hidden="true"
+              ></div>
+            }
 
             <!-- Overhead HP Bar & Status Badges -->
             <div class="unit-overhead">
@@ -783,9 +1025,6 @@
             <!-- Character SVG Sprite -->
             <img
               class="unit-sprite"
-              [class.flip-x]="
-                (unit.isHero && unit.facing === 'left') || (!unit.isHero && unit.facing === 'right')
-              "
               [style.transform]="
                 'scale(' +
                 unit.scale *
@@ -817,19 +1056,62 @@
           </div>
         }
 
+        <!-- BOTTOM-LEFT CLASSIC BATTLEHEART ACTIVE SKILL MEDALLIONS (For Selected Hero) -->
+        @if (combat.selectedHero(); as selHero) {
+          <div
+            class="bh-bottom-left-skills"
+            aria-label="Selected Hero Active Skills"
+            (pointerdown)="$event.stopPropagation()"
+          >
+            <div class="selected-hero-banner" [style.borderColor]="selHero.accentColor">
+              <span>{{ selHero.name }}'s Abilities</span>
+            </div>
+            <div class="bh-skill-orbs">
+              @for (sk of selHero.skills; track sk.def.id; let sIdx = $index) {
+                <button
+                  type="button"
+                  class="skill-btn bh-skill-orb"
+                  [disabled]="sk.cooldownRemaining > 0"
+                  (click)="triggerSkill(selHero.uid, sIdx)"
+                  [title]="sk.def.name + ': ' + sk.def.description"
+                >
+                  <span class="orb-icon">{{ sk.def.icon }}</span>
+                  <span class="orb-name">{{ sk.def.name }}</span>
+                  @if (sk.cooldownRemaining > 0) {
+                    <span class="orb-cooldown">{{ sk.cooldownRemaining.toFixed(1) }}s</span>
+                  } @else {
+                    <span class="orb-hotkey">[{{ sIdx === 0 ? 'Q' : 'W' }}]</span>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        }
+
         <!-- Victory / Defeat Overlay Modal -->
         @if (combat.outcome() !== 'ongoing') {
-          <div class="outcome-overlay" role="dialog" aria-modal="true">
+          <div
+            class="outcome-overlay"
+            role="dialog"
+            aria-modal="true"
+            (pointerdown)="$event.stopPropagation()"
+          >
             <div class="outcome-card">
               <h2>
                 {{ combat.outcome() === 'victory' ? '🏆 Victory!' : '💀 Party Fallen' }}
               </h2>
               @if (combat.lastRewardSummary(); as reward) {
+                @if (combat.outcome() === 'victory') {
+                  <div class="spoils-chest-box" aria-hidden="true">
+                    <span class="chest-icon">🧰</span>
+                    <span class="chest-name">{{ reward.bonusLootName }}</span>
+                  </div>
+                }
                 @if (reward.stars > 0) {
                   <div class="stars-display">{{ '⭐'.repeat(reward.stars) }}</div>
                 }
                 <p class="reward-line">
-                  Earned <strong>🪙 +{{ reward.gold }} Gold</strong> &amp;
+                  Spoils of War: <strong>🪙 +{{ reward.gold }} Gold</strong> &amp;
                   <strong>✨ +{{ reward.xp }} XP</strong>
                 </p>
                 @if (reward.leveledUpHeroes.length > 0) {
@@ -839,65 +1121,16 @@
                 }
               }
               <div class="outcome-actions">
-                <button type="button" class="btn-primary" (click)="launchStage(stage)">
-                  🔄 Replay Stage
+                <button type="button" class="btn-gold" (click)="launchStage(stage)">
+                  🔄 Fight Again
                 </button>
-                <button type="button" class="btn-secondary" (click)="combat.stopBattle()">
-                  🗺️ Return to Realm
+                <button type="button" class="btn-wood" (click)="combat.stopBattle()">
+                  🗺️ Return to World Map
                 </button>
               </div>
             </div>
           </div>
         }
-      </div>
-
-      <!-- Bottom Tactical Skill Bar & Hero Dock -->
-      <div class="battle-hud-bottom" aria-label="Party Command Dock">
-        <div class="hero-dock-list">
-          @for (hero of combat.heroes(); track hero.uid; let idx = $index) {
-            <div
-              class="dock-hero-card"
-              role="button"
-              tabindex="0"
-              [class.selected]="combat.selectedHeroUid() === hero.uid"
-              (click)="combat.selectHero(hero.uid)"
-              (keydown.enter)="combat.selectHero(hero.uid)"
-              (keydown.space)="combat.selectHero(hero.uid)"
-            >
-              <div class="dock-portrait-wrap" [style.borderColor]="hero.accentColor">
-                <img [src]="hero.svgAsset" [alt]="hero.name" />
-                <span class="hotkey-badge">{{ idx + 1 }}</span>
-              </div>
-              <div class="dock-info">
-                <div class="dock-name-row">
-                  <strong>{{ hero.name }}</strong>
-                  <span>{{ hero.hp }}/{{ hero.maxHp }}</span>
-                </div>
-                <div class="dock-hp-bar">
-                  <div class="dock-hp-fill" [style.width.%]="(hero.hp / hero.maxHp) * 100"></div>
-                </div>
-                <div class="dock-skills-row">
-                  @for (sk of hero.skills; track sk.def.id; let sIdx = $index) {
-                    <button
-                      type="button"
-                      class="skill-btn"
-                      [disabled]="sk.cooldownRemaining > 0"
-                      (click)="$event.stopPropagation(); triggerSkill(hero.uid, sIdx)"
-                      [title]="sk.def.name + ': ' + sk.def.description"
-                    >
-                      <span class="sk-emoji">{{ sk.def.icon }}</span>
-                      <span class="sk-label">{{
-                        sk.cooldownRemaining > 0
-                          ? sk.cooldownRemaining.toFixed(1) + 's'
-                          : sk.def.name
-                      }}</span>
-                    </button>
-                  }
-                </div>
-              </div>
-            </div>
-          }
-        </div>
       </div>
     </section>
   }

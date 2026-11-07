@@ -236,6 +236,20 @@ export interface CombatUnit {
   // Animation feedback timers
   attackAnimTimer: number;
   hurtAnimTimer: number;
+  isMoving?: boolean;
+}
+
+export interface ArenaTelegraphEffect {
+  id: string;
+  sourceUid: string;
+  x: number;
+  y: number;
+  radius: number;
+  color: string;
+  label: string;
+  elapsed: number;
+  duration: number;
+  ability: 'ground-slam' | 'fire-breath';
 }
 
 export interface Projectile {

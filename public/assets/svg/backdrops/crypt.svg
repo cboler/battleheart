@@ -1,26 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="none">
   <defs>
-    <linearGradient id="cwall" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="cryptWall" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#090d16"/>
-      <stop offset="100%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
     </linearGradient>
-    <linearGradient id="cfloor" x1="0" y1="0" x2="0" y2="1">
+    <radialGradient id="cryptFloor" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#334155"/>
+      <stop offset="75%" stop-color="#1e293b"/>
       <stop offset="100%" stop-color="#0f172a"/>
-    </linearGradient>
+    </radialGradient>
   </defs>
-  <rect width="1200" height="285" fill="url(#cwall)"/>
-  <!-- Stone Archways -->
-  <g fill="#0f172a" stroke="#475569" stroke-width="6">
-    <path d="M120 285 L120 140 A70 70 0 0 1 260 140 L260 285 Z"/>
-    <path d="M530 285 L530 140 A70 70 0 0 1 670 140 L670 285 Z"/>
-    <path d="M940 285 L940 140 A70 70 0 0 1 1080 140 L1080 285 Z"/>
-  </g>
-  <!-- Torch Sconces -->
-  <circle cx="395" cy="175" r="18" fill="#f97316" opacity="0.7"/>
-  <circle cx="805" cy="175" r="18" fill="#f97316" opacity="0.7"/>
-  <!-- Flagstone Floor -->
-  <rect y="275" width="1200" height="425" fill="url(#cfloor)"/>
-  <ellipse cx="600" cy="485" rx="510" ry="170" fill="#1e1b4b" opacity="0.45" stroke="#6366f1" stroke-width="3" stroke-dasharray="16 12"/>
-</svg>
 
+  <!-- Gothic Stone Wall & Arches -->
+  <rect width="800" height="205" fill="url(#cryptWall)"/>
+  <g fill="#0f172a" stroke="#334155" stroke-width="3">
+    <path d="M60 205 L60 95 Q115 35 170 95 L170 205 Z"/>
+    <path d="M340 205 L340 85 Q400 25 460 85 L460 205 Z"/>
+    <path d="M630 205 L630 95 Q685 35 740 205 Z"/>
+  </g>
+
+  <!-- Stone Pillars & Flickering Soul Torches -->
+  <g fill="#334155" stroke="#0f172a" stroke-width="3">
+    <rect x="220" y="30" width="38" height="175"/>
+    <rect x="542" y="30" width="38" height="175"/>
+  </g>
+  <circle cx="239" cy="105" r="18" fill="#a855f7" opacity="0.35"/>
+  <circle cx="239" cy="105" r="8" fill="#e879f9"/>
+  <circle cx="561" cy="105" r="18" fill="#a855f7" opacity="0.35"/>
+  <circle cx="561" cy="105" r="8" fill="#e879f9"/>
+
+  <!-- Flagstone Crypt Floor & Ritual Circle -->
+  <rect y="200" width="800" height="300" fill="#0f172a"/>
+  <ellipse cx="400" cy="348" rx="342" ry="114" fill="url(#cryptFloor)" stroke="#475569" stroke-width="4"/>
+  <ellipse cx="400" cy="348" rx="285" ry="90" fill="none" stroke="#a855f7" stroke-width="2" stroke-dasharray="12 8" opacity="0.45"/>
+</svg>

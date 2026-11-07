@@ -1,28 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="none">
   <defs>
-    <linearGradient id="fsky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#0f172a"/>
-      <stop offset="100%" stop-color="#1e3a8a"/>
+    <linearGradient id="nightSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#020617"/>
+      <stop offset="55%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#064e3b"/>
     </linearGradient>
-    <linearGradient id="fground" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#14532d"/>
+    <radialGradient id="mossClearing" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="70%" stop-color="#0f172a"/>
       <stop offset="100%" stop-color="#052e16"/>
-    </linearGradient>
+    </radialGradient>
   </defs>
-  <rect width="1200" height="310" fill="url(#fsky)"/>
-  <!-- Moon -->
-  <circle cx="980" cy="110" r="46" fill="#fef9c3" opacity="0.85"/>
-  <!-- Silhouetted Pine Trees -->
-  <g fill="#064e3b">
-    <polygon points="80,290 140,110 200,290"/>
-    <polygon points="180,290 250,95 320,290"/>
-    <polygon points="860,290 930,105 1000,290"/>
-    <polygon points="990,290 1070,90 1150,290"/>
-  </g>
-  <rect y="275" width="1200" height="425" fill="url(#fground)"/>
-  <ellipse cx="600" cy="485" rx="520" ry="175" fill="#1e293b" opacity="0.5"/>
-  <!-- Glowing Mushrooms -->
-  <circle cx="140" cy="360" r="8" fill="#38bdf8" opacity="0.8"/>
-  <circle cx="1060" cy="380" r="9" fill="#c084fc" opacity="0.8"/>
-</svg>
 
+  <!-- Twilight Canopy Sky & Full Moon -->
+  <rect width="800" height="215" fill="url(#nightSky)"/>
+  <circle cx="650" cy="64" r="38" fill="#fef9c3" opacity="0.22"/>
+  <circle cx="650" cy="64" r="24" fill="#fef08a" opacity="0.9"/>
+
+  <!-- Dense Ancient Pine Silhouettes -->
+  <g fill="#022c22" stroke="#020617" stroke-width="2">
+    <polygon points="30,210 75,60 120,210"/>
+    <polygon points="95,210 145,42 195,210"/>
+    <polygon points="175,210 220,78 265,210"/>
+    <polygon points="535,210 585,68 635,210"/>
+    <polygon points="610,210 665,38 720,210"/>
+    <polygon points="690,210 745,62 795,210"/>
+  </g>
+
+  <!-- Deep Forest Floor -->
+  <rect y="195" width="800" height="305" fill="#052e16"/>
+
+  <!-- Moonlit Clearing & Rune Stones -->
+  <ellipse cx="400" cy="348" rx="342" ry="114" fill="url(#mossClearing)" stroke="#14532d" stroke-width="4"/>
+  <ellipse cx="400" cy="348" rx="292" ry="92" fill="none" stroke="#34d399" stroke-width="1.5" stroke-dasharray="8 8" opacity="0.35"/>
+
+  <!-- Glowing Bioluminescent Mushrooms & Fireflies -->
+  <g>
+    <ellipse cx="92" cy="260" rx="14" ry="8" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>
+    <ellipse cx="114" cy="272" rx="10" ry="6" fill="#34d399" stroke="#0f172a" stroke-width="2"/>
+    <ellipse cx="705" cy="265" rx="15" ry="8" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>
+    <ellipse cx="682" cy="276" rx="10" ry="6" fill="#a855f7" stroke="#0f172a" stroke-width="2"/>
+    <circle cx="240" cy="150" r="3" fill="#fde047" opacity="0.8"/>
+    <circle cx="490" cy="135" r="2.5" fill="#34d399" opacity="0.85"/>
+    <circle cx="360" cy="168" r="3" fill="#fde047" opacity="0.75"/>
+  </g>
+</svg>

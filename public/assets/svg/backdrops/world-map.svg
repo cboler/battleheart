@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620" preserveAspectRatio="none">
+  <defs>
+    <radialGradient id="parchment" cx="50%" cy="48%" r="58%">
+      <stop offset="0%" stop-color="#f7e8b5"/>
+      <stop offset="68%" stop-color="#e2c483"/>
+      <stop offset="100%" stop-color="#b5894c"/>
+    </radialGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2b4c5e"/>
+      <stop offset="50%" stop-color="#3d687d"/>
+      <stop offset="100%" stop-color="#1e3745"/>
+    </linearGradient>
+    <radialGradient id="volcanoGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#dc2626" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#7f1d1d" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Cartographic Sea Backdrop & Rhumb Lines -->
+  <rect width="1000" height="620" fill="url(#sea)"/>
+  <g stroke="rgba(255,255,255,0.08)" stroke-width="1">
+    <line x1="90" y1="95" x2="950" y2="550"/>
+    <line x1="90" y1="95" x2="950" y2="250"/>
+    <line x1="90" y1="95" x2="450" y2="600"/>
+    <line x1="880" y1="80" x2="120" y2="520"/>
+  </g>
+
+  <!-- Continent Coastline Drop Shadow & Parchment Landmass -->
+  <path
+    d="M 55 460 Q 25 260 110 135 Q 230 35 480 55 Q 720 75 880 95 Q 965 180 945 360 Q 925 545 730 570 Q 450 595 215 565 Q 75 550 55 460 Z"
+    fill="rgba(0,0,0,0.45)"
+    transform="translate(8, 10)"
+  />
+  <path
+    d="M 55 460 Q 25 260 110 135 Q 230 35 480 55 Q 720 75 880 95 Q 965 180 945 360 Q 925 545 730 570 Q 450 595 215 565 Q 75 550 55 460 Z"
+    fill="url(#parchment)"
+    stroke="#5c3a1e"
+    stroke-width="6"
+  />
+  <!-- Inner Double Coastline Ink Ring -->
+  <path
+    d="M 70 452 Q 42 265 122 146 Q 238 50 480 68 Q 712 88 866 108 Q 948 188 928 355 Q 910 532 722 555 Q 450 578 220 550 Q 88 536 70 452 Z"
+    fill="none"
+    stroke="#784f2a"
+    stroke-width="2"
+    stroke-dasharray="8 6"
+  />
+
+  <!-- Winding Azure River from the Mountains to the Southern Sea -->
+  <path
+    d="M 445 190 Q 420 265 375 310 T 320 435 Q 300 500 285 562"
+    fill="none"
+    stroke="#3d687d"
+    stroke-width="10"
+    stroke-linecap="round"
+  />
+  <path
+    d="M 445 190 Q 420 265 375 310 T 320 435 Q 300 500 285 562"
+    fill="none"
+    stroke="#7dd3fc"
+    stroke-width="3"
+    stroke-linecap="round"
+    opacity="0.55"
+  />
+
+  <!-- Region 1: Sunlit King's Citadel & Western Meadows -->
+  <ellipse cx="150" cy="400" rx="95" ry="65" fill="#a3b16b" opacity="0.35"/>
+  <g transform="translate(52, 345)" stroke="#3d2310" stroke-width="2.5">
+    <rect x="8" y="26" width="52" height="36" fill="#d6c5b3"/>
+    <rect x="2" y="14" width="16" height="48" fill="#c2ad96"/>
+    <rect x="50" y="14" width="16" height="48" fill="#c2ad96"/>
+    <polygon points="0,14 10,0 20,14" fill="#2563eb"/>
+    <polygon points="48,14 58,0 68,14" fill="#2563eb"/>
+    <polygon points="20,26 34,8 48,26" fill="#dc2626"/>
+    <path d="M 27 62 L 27 44 Q 34 38 41 44 L 41 62 Z" fill="#271206"/>
+  </g>
+
+  <!-- Region 2: Whispering Woods & Wolf Den -->
+  <ellipse cx="290" cy="355" rx="145" ry="95" fill="#658c48" opacity="0.38"/>
+  <g fill="#3f6212" stroke="#271a0c" stroke-width="2.2">
+    <circle cx="195" cy="295" r="18"/>
+    <circle cx="215" cy="285" r="22"/>
+    <circle cx="235" cy="300" r="17"/>
+    <circle cx="295" cy="385" r="19"/>
+    <circle cx="318" cy="378" r="22"/>
+    <circle cx="255" cy="420" r="16"/>
+  </g>
+
+  <!-- Region 3: Crag of the Mountain King -->
+  <g stroke="#3d2310" stroke-width="3" stroke-linejoin="round">
+    <polygon points="340,245 395,135 450,245" fill="#b08d57"/>
+    <polygon points="395,135 375,175 395,166 415,175" fill="#f8fafc"/>
+    <polygon points="410,255 475,115 540,255" fill="#9c7a44"/>
+    <polygon points="475,115 450,165 475,152 500,165" fill="#f8fafc"/>
+    <polygon points="485,250 538,150 590,250" fill="#b08d57"/>
+  </g>
+
+  <!-- Region 4: Sunken Catacombs & Gorgon Sanctum -->
+  <ellipse cx="555" cy="340" rx="135" ry="88" fill="#64748b" opacity="0.32"/>
+  <g transform="translate(475, 325)" stroke="#3d2310" stroke-width="2.5" fill="#94a3b8">
+    <rect x="0" y="0" width="66" height="8"/>
+    <rect x="6" y="8" width="10" height="32"/>
+    <rect x="28" y="8" width="10" height="32"/>
+    <rect x="50" y="8" width="10" height="32"/>
+    <rect x="-4" y="40" width="74" height="7"/>
+  </g>
+
+  <!-- Region 5: Obsidian Spire of Ignis -->
+  <circle cx="775" cy="185" r="115" fill="url(#volcanoGlow)"/>
+  <g stroke="#271206" stroke-width="3" stroke-linejoin="round">
+    <polygon points="685,220 755,95 825,220" fill="#44403c"/>
+    <polygon points="745,235 815,82 885,235" fill="#292524"/>
+    <ellipse cx="815" cy="84" rx="18" ry="6" fill="#f97316"/>
+    <path d="M 810 88 Q 802 140 788 185" stroke="#ef4444" stroke-width="4" fill="none"/>
+    <path d="M 820 88 Q 828 145 842 195" stroke="#f97316" stroke-width="3.5" fill="none"/>
+  </g>
+
+  <!-- Region 6: Doomvale Colosseum (Bottom-Right) -->
+  <g transform="translate(730, 415)" stroke="#3d2310" stroke-width="2.5">
+    <ellipse cx="48" cy="36" rx="46" ry="24" fill="#d6c5b3"/>
+    <ellipse cx="48" cy="30" rx="34" ry="15" fill="#b45309"/>
+    <path d="M 4 30 L 4 48 Q 48 68 92 48 L 92 30" fill="#c2ad96"/>
+  </g>
+
+  <!-- Ornate Compass Rose (Top-Left) & Cartography Scroll Banner -->
+  <g transform="translate(92, 96)">
+    <circle cx="0" cy="0" r="34" fill="#f7e8b5" stroke="#5c3a1e" stroke-width="3"/>
+    <circle cx="0" cy="0" r="28" fill="none" stroke="#784f2a" stroke-width="1" stroke-dasharray="3 3"/>
+    <polygon points="0,-30 7,-7 30,0 7,7 0,30 -7,7 -30,0 -7,-7" fill="#b45309" stroke="#3d2310" stroke-width="1.5"/>
+    <polygon points="0,-30 4,-7 0,0 -4,-7" fill="#dc2626"/>
+    <circle cx="0" cy="0" r="4" fill="#fde047" stroke="#3d2310" stroke-width="1.5"/>
+  </g>
+</svg>

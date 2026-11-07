@@ -11,7 +11,12 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { ARMOR_TIERS, TRINKET_CATALOG, WEAPON_TIERS } from '../core/models/game-catalog';
+import {
+  ARMOR_TIERS,
+  STAGE_CATALOG,
+  TRINKET_CATALOG,
+  WEAPON_TIERS,
+} from '../core/models/game-catalog';
 import { CombatUnit, EquipmentTier, HeroClassId, StageDefinition } from '../core/models/game.model';
 import { AudioService } from '../core/services/audio.service';
 import { CombatService } from '../core/services/combat.service';
@@ -37,6 +42,19 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   protected readonly activeTab = signal<HubTab>('map');
   protected readonly inspectedHeroId = signal<HeroClassId>('knight');
+  protected readonly selectedStageId = signal<string>('stage-1');
+
+  protected readonly selectedStageEntry = computed(
+    () =>
+      this.gameState.stages().find((s) => s.stage.id === this.selectedStageId()) ??
+      this.gameState.stages()[0],
+  );
+
+  protected readonly campaignRoadPoints = computed(() =>
+    STAGE_CATALOG.filter((s) => !s.isArena)
+      .map((s) => `${s.mapX},${s.mapY}`)
+      .join(' '),
+  );
 
   protected readonly inspectedHero = computed(
     () =>
@@ -123,6 +141,11 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   protected setTab(tab: HubTab): void {
     this.activeTab.set(tab);
+    this.audio.playSelect();
+  }
+
+  protected selectMapNode(stageId: string): void {
+    this.selectedStageId.set(stageId);
     this.audio.playSelect();
   }
 
