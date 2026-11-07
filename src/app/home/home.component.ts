@@ -17,7 +17,13 @@ import {
   TRINKET_CATALOG,
   WEAPON_TIERS,
 } from '../core/models/game-catalog';
-import { CombatUnit, EquipmentTier, HeroClassId, StageDefinition } from '../core/models/game.model';
+import {
+  CombatUnit,
+  EquipmentTier,
+  HeroClassId,
+  StageDefinition,
+  TrinketDefinition,
+} from '../core/models/game.model';
 import { AudioService } from '../core/services/audio.service';
 import { CombatService } from '../core/services/combat.service';
 import { GameStateService } from '../core/services/game-state.service';
@@ -173,6 +179,11 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   protected nextArmorTier(currentTier: number): EquipmentTier | null {
     return ARMOR_TIERS[currentTier] ?? null;
+  }
+
+  protected getTrinketById(id: string | null | undefined): TrinketDefinition | null {
+    if (!id) return null;
+    return TRINKET_CATALOG.find((t) => t.id === id) ?? null;
   }
 
   protected launchStage(stage: StageDefinition): void {

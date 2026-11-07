@@ -34,6 +34,7 @@ export class StorageService {
         weaponTier: 1,
         armorTier: 1,
         trinketId: null,
+        secondTrinketId: null,
         skillChoices: {
           tier1: 'A',
           tier2: 'A',
@@ -117,9 +118,10 @@ export class StorageService {
             inParty: Boolean(savedHero.inParty),
             level: Math.max(1, Math.min(20, Number(savedHero.level) || 1)),
             xp: Math.max(0, Number(savedHero.xp) || 0),
-            weaponTier: Math.max(1, Math.min(6, Number(savedHero.weaponTier) || 1)),
-            armorTier: Math.max(1, Math.min(6, Number(savedHero.armorTier) || 1)),
+            weaponTier: Math.max(1, Math.min(7, Number(savedHero.weaponTier) || 1)),
+            armorTier: Math.max(1, Math.min(7, Number(savedHero.armorTier) || 1)),
             trinketId: savedHero.trinketId ?? null,
+            secondTrinketId: savedHero.secondTrinketId ?? null,
             skillChoices: {
               tier1: savedHero.skillChoices?.tier1 === 'B' ? 'B' : 'A',
               tier2: savedHero.skillChoices?.tier2 === 'B' ? 'B' : 'A',

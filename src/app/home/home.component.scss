@@ -413,6 +413,37 @@
   }
 }
 
+.scroll-unlocks-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.unlock-callout {
+  font-size: 0.78rem;
+  background-color: rgba(69, 26, 3, 0.12);
+  border-left: 3px solid #854d0e;
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: #2c180c;
+
+  &.bis-callout {
+    border-left-color: #7e22ce;
+    background-color: rgba(126, 34, 206, 0.1);
+  }
+}
+
+.collected-pill {
+  display: inline-block;
+  margin-left: 4px;
+  background-color: #15803d;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 99px;
+}
+
 .btn-march-battle {
   width: 100%;
   min-height: 50px;
@@ -654,6 +685,110 @@
 }
 
 /* Armory & Academy Shared */
+.forge-tier-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: linear-gradient(90deg, #3b2412 0%, #24160d 100%);
+  border: 1px solid #ca8a04;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+
+  strong {
+    display: block;
+    color: #fde047;
+    font-size: 0.88rem;
+  }
+
+  span {
+    color: #d6c5b3;
+  }
+}
+
+.forge-stage-pill {
+  background-color: #120b06;
+  border: 1px solid #8c673a;
+  border-radius: 99px;
+  padding: 4px 10px;
+  font-weight: 800;
+  color: #fef08a !important;
+}
+
+.equipped-trinkets-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  text-align: left;
+}
+
+.trinket-slot-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  background-color: rgba(18, 11, 6, 0.65);
+  border: 1px solid #6b4c2b;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 0.74rem;
+
+  .slot-num {
+    color: #c2ad96;
+    font-weight: 700;
+  }
+
+  .empty-slot {
+    color: #78716c;
+    font-style: italic;
+  }
+}
+
+.bis-tag {
+  display: inline-block;
+  background: linear-gradient(180deg, #a855f7 0%, #6b21a8 100%);
+  color: #fffbeb;
+  border: 1px solid #fde047;
+  font-size: 0.64rem;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 99px;
+  vertical-align: middle;
+}
+
+.tier-gate-notice {
+  background-color: rgba(18, 11, 6, 0.7);
+  border: 1px dashed #8c673a;
+  color: #d6c5b3;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.trinket-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.boss-drop-hint {
+  display: block;
+  margin-top: 3px;
+  color: #fde047;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.locked-relic-desc {
+  color: #a8a29e !important;
+  font-style: italic;
+}
 .hero-selector-strip {
   display: flex;
   flex-wrap: wrap;
@@ -800,6 +935,15 @@
   &.equipped {
     border-color: #4ade80;
     background-color: rgba(21, 128, 61, 0.2);
+  }
+
+  &.is-bis {
+    border-color: #c084fc;
+    box-shadow: inset 0 0 14px rgba(168, 85, 247, 0.22);
+  }
+
+  &.is-locked-relic {
+    opacity: 0.65;
   }
 }
 
@@ -1500,6 +1644,16 @@
     border-radius: 8px;
     font-weight: 800;
     font-size: 0.85rem;
+  }
+
+  .bis-drop-banner {
+    background: linear-gradient(90deg, rgba(126, 34, 206, 0.4), rgba(180, 83, 9, 0.4));
+    border: 2px solid #fde047;
+    color: #fef08a;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    font-weight: 800;
   }
 }
 

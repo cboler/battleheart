@@ -1,6 +1,7 @@
 import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
 import { ENEMY_CATALOG } from '../models/game-catalog';
 import {
+  ArenaHazardZone,
   ArenaRingEffect,
   ArenaTelegraphEffect,
   CombatUnit,
@@ -33,6 +34,7 @@ export class CombatService implements OnDestroy {
   public readonly floatingTexts = signal<FloatingText[]>([]);
   public readonly ringEffects = signal<ArenaRingEffect[]>([]);
   public readonly telegraphs = signal<ArenaTelegraphEffect[]>([]);
+  public readonly hazardZones = signal<ArenaHazardZone[]>([]);
 
   public readonly selectedHeroUid = signal<string | null>(null);
 
@@ -43,6 +45,7 @@ export class CombatService implements OnDestroy {
     stars: number;
     leveledUpHeroes: string[];
     bonusLootName: string;
+    droppedRelicName: string | null;
   } | null>(null);
 
   public readonly heroes = computed(() => this.units().filter((u) => u.isHero));
@@ -94,6 +97,7 @@ export class CombatService implements OnDestroy {
     this.floatingTexts.set([]);
     this.ringEffects.set([]);
     this.telegraphs.set([]);
+    this.hazardZones.set([]);
     this.lastRewardSummary.set(null);
 
     // Spawn Party Heroes on left side of arena
@@ -252,8 +256,17 @@ export class CombatService implements OnDestroy {
           }
         } else {
           // Dropped on an Enemy: Focus attack on this enemy!
+          // If the hero is a Tank, dragging them onto an enemy also taunts/intercepts that enemy!
           hero.targetUnitUid = target.uid;
           hero.moveDestination = null;
+          if (hero.role === 'tank') {
+            hero.threat += 110;
+            const targetIdx = all.findIndex((u) => u.uid === target.uid);
+            if (targetIdx !== -1) {
+              all[targetIdx] = { ...all[targetIdx], targetUnitUid: hero.uid };
+            }
+            this.addText(hero.x, hero.y - 8, '🛡️ TAUNT!', '#38bdf8', false);
+          }
         }
         all[heroIdx] = hero;
         this.units.set(all);
@@ -546,12 +559,15 @@ export class CombatService implements OnDestroy {
         }
       }
 
-      // Passive Regeneration
+      // Passive Regeneration (Heroes & Regenerating Slimes)
       if (unit.regenHps > 0 && unit.hp > 0 && unit.hp < unit.maxHp) {
         const prevFloor = Math.floor(this.waveElapsedSec);
         const currFloor = Math.floor(this.waveElapsedSec + clampedDt);
         if (currFloor > prevFloor) {
           unit.hp = Math.min(unit.maxHp, unit.hp + unit.regenHps);
+          if (!unit.isHero) {
+            this.addText(unit.x, unit.y - 6, `+${unit.regenHps}`, '#a3e635', false);
+          }
         }
       }
 
@@ -609,7 +625,7 @@ export class CombatService implements OnDestroy {
         .filter((r) => r.life > 0),
     );
 
-    // 4b. Step Boss Danger Telegraphs (gives player ~1.4s to drag-kite heroes out of red circle!)
+    // 4b. Step Boss Danger Telegraphs (gives player ~2.0s to drag-kite heroes out of red circle!)
     const activeTelegraphs: ArenaTelegraphEffect[] = [];
     for (const tel of this.telegraphs()) {
       const source = allUnits.find((u) => u.uid === tel.sourceUid && u.hp > 0);
@@ -621,16 +637,54 @@ export class CombatService implements OnDestroy {
           (u) => u.isHero && u.hp > 0 && this.dist(tel, u) <= tel.radius,
         );
         for (const h of heroesInBlast) {
-          const mult = tel.ability === 'ground-slam' ? 1.55 : 1.4;
+          const mult = tel.ability === 'ground-slam' ? 1.55 : 1.35;
           this.applyDamage(source, h, Math.round(source.attack * mult), true);
           if (tel.ability === 'ground-slam') {
-            h.stunTimer = 1.6;
+            h.stunTimer = 1.8;
+          } else if (tel.ability === 'petrify-gaze') {
+            h.stunTimer = 3.2;
           }
         }
+
+        // Spawn lingering Acid Pool / Scorched Magma Hazard Zone if applicable
+        if (tel.ability === 'acid-pool' || tel.ability === 'fire-breath') {
+          this.hazardZones.set([
+            ...this.hazardZones(),
+            {
+              id: `haz-${this.uidCounter++}`,
+              x: tel.x,
+              y: tel.y,
+              radius: tel.radius * 0.85,
+              dps: tel.ability === 'acid-pool' ? 14 : 18,
+              color: tel.ability === 'acid-pool' ? '#84cc16' : '#ef4444',
+              label: tel.ability === 'acid-pool' ? 'ACID!' : 'BURN!',
+              remainingSec: 5.5,
+              maxSec: 5.5,
+            },
+          ]);
+        }
+
+        // Boss Aggro Reset mechanic: forces player to re-taunt with Tank after dodging/eating slam!
+        const enemyDef = source.enemyId ? ENEMY_CATALOG[source.enemyId] : null;
+        if (enemyDef?.dropsThreatOnSpecial) {
+          for (const h of allUnits) {
+            if (h.isHero && h.role === 'tank') {
+              h.threat = Math.max(0, Math.round(h.threat * 0.15));
+            }
+          }
+          // Redirect boss onto a non-tank hero until the player re-taunts!
+          const squishies = allUnits.filter((u) => u.isHero && u.hp > 0 && u.role !== 'tank');
+          const allLivingHeroes = allUnits.filter((u) => u.isHero && u.hp > 0);
+          const nextVictim =
+            squishies[Math.floor(Math.random() * squishies.length)] ?? allLivingHeroes[0];
+          source.targetUnitUid = nextVictim?.uid ?? null;
+          this.addText(source.x, source.y - 14, '⚠️ AGGRO RESET! RE-TAUNT!', '#fde047', true);
+        }
+
         this.addRing(tel.x, tel.y, tel.radius, tel.color);
         this.addText(
           tel.x,
-          tel.y - 10,
+          tel.y - 8,
           heroesInBlast.length === 0 ? 'DODGED!' : `${tel.label}!`,
           heroesInBlast.length === 0 ? '#34d399' : tel.color,
           true,
@@ -642,13 +696,53 @@ export class CombatService implements OnDestroy {
     }
     this.telegraphs.set(activeTelegraphs);
 
-    // Remove dead units and count arena kills
-    const deadEnemies = allUnits.filter((u) => !u.isHero && u.hp <= 0).length;
-    if (deadEnemies > 0) {
-      this.arenaKills.set(this.arenaKills() + deadEnemies);
+    // 4c. Step Lingering Ground Hazard Zones (Acid Pools & Magma Patches)
+    const prevTickSec = Math.floor(this.waveElapsedSec);
+    const currTickSec = Math.floor(this.waveElapsedSec + clampedDt);
+    const nextHazards: ArenaHazardZone[] = [];
+    for (const haz of this.hazardZones()) {
+      const rem = haz.remainingSec - clampedDt;
+      if (rem <= 0) continue;
+      if (currTickSec > prevTickSec) {
+        for (const h of allUnits) {
+          if (h.isHero && h.hp > 0 && this.dist(haz, h) <= haz.radius) {
+            h.hp = Math.max(0, h.hp - haz.dps);
+            h.hurtAnimTimer = 0.15;
+            this.addText(h.x, h.y - 6, `-${haz.dps} ${haz.label}`, haz.color, false);
+          }
+        }
+      }
+      nextHazards.push({ ...haz, remainingSec: rem });
+    }
+    this.hazardZones.set(nextHazards);
+
+    // 5. Handle Enemy Deaths, Slime Splitting (`splitsOnDeath`), and Arena Kills
+    const newlyDeadEnemies = allUnits.filter((u) => !u.isHero && u.hp <= 0);
+    const splitChildren: CombatUnit[] = [];
+    if (newlyDeadEnemies.length > 0) {
+      this.arenaKills.set(this.arenaKills() + newlyDeadEnemies.length);
+      for (const fallen of newlyDeadEnemies) {
+        const def = fallen.enemyId ? ENEMY_CATALOG[fallen.enemyId] : null;
+        if (def?.splitsOnDeath) {
+          this.addRing(fallen.x, fallen.y, 16, '#84cc16');
+          this.addText(
+            fallen.x,
+            fallen.y - 8,
+            `SPLIT! x${def.splitsOnDeath.count}`,
+            '#a3e635',
+            true,
+          );
+          for (let s = 0; s < def.splitsOnDeath.count; s++) {
+            const child = this.createEnemyUnit(def.splitsOnDeath.enemyId, s);
+            child.x = this.clampX(fallen.x + (s === 0 ? -4 : 4));
+            child.y = this.clampY(fallen.y + (s === 0 ? -3 : 3));
+            splitChildren.push(child);
+          }
+        }
+      }
     }
 
-    const surviving = allUnits.filter((u) => u.hp > 0);
+    const surviving = [...allUnits.filter((u) => u.hp > 0), ...splitChildren];
     this.units.set(surviving);
 
     // Ensure selectedHeroUid points to a living hero
@@ -867,11 +961,49 @@ export class CombatService implements OnDestroy {
       case 'petrify-gaze': {
         const victim = heroes[Math.floor(Math.random() * heroes.length)];
         if (victim) {
-          victim.stunTimer = 3.0;
-          this.applyDamage(enemy, victim, Math.round(enemy.attack * 1.2), true);
-          this.addRing(victim.x, victim.y, 14, '#10b981');
-          this.addText(victim.x, victim.y - 8, 'PETRIFIED!', '#10b981', true);
+          this.telegraphs.set([
+            ...this.telegraphs(),
+            {
+              id: `tel-${this.uidCounter++}`,
+              sourceUid: enemy.uid,
+              x: victim.x,
+              y: victim.y,
+              radius: 20,
+              color: '#10b981',
+              label: 'PETRIFYING GAZE',
+              elapsed: 0,
+              duration: 2.0,
+              ability: 'petrify-gaze',
+            },
+          ]);
+          this.addText(
+            victim.x,
+            victim.y - 10,
+            '⚠️ GAZE ON ' + victim.name.toUpperCase() + '!',
+            '#10b981',
+            true,
+          );
         }
+        break;
+      }
+      case 'acid-pool': {
+        const meleeVictim = heroes.find((h) => h.uid === enemy.targetUnitUid) ?? heroes[0] ?? enemy;
+        this.telegraphs.set([
+          ...this.telegraphs(),
+          {
+            id: `tel-${this.uidCounter++}`,
+            sourceUid: enemy.uid,
+            x: meleeVictim.x,
+            y: meleeVictim.y,
+            radius: 25,
+            color: '#84cc16',
+            label: 'CAUSTIC ERUPTION',
+            elapsed: 0,
+            duration: 2.0,
+            ability: 'acid-pool',
+          },
+        ]);
+        this.addText(enemy.x, enemy.y - 10, '⚠️ ACID POOL WINDUP!', '#a3e635', true);
         break;
       }
       case 'fire-breath': {
@@ -994,6 +1126,7 @@ export class CombatService implements OnDestroy {
       const pool: EnemyId[] = [
         'goblin-scout',
         'goblin-archer',
+        'giant-slime',
         'goblin-shaman',
         'dire-wolf',
         'orc-brute',
@@ -1082,8 +1215,8 @@ export class CombatService implements OnDestroy {
       attackBuffTimer: 0,
       poisonTimer: 0,
       poisonDps: 0,
-      regenTimer: 0,
-      regenHps: 0,
+      regenTimer: 9999,
+      regenHps: Math.round((def.regenHps ?? 0) * waveScale),
       attackAnimTimer: 0,
       hurtAnimTimer: 0,
     };
@@ -1113,6 +1246,7 @@ export class CombatService implements OnDestroy {
         stars: 0,
         leveledUpHeroes: res.leveledUpHeroes,
         bonusLootName: stage.isArena ? 'Colosseum Valor Purse' : 'Retreat Salvage Pouch',
+        droppedRelicName: res.droppedRelicName,
       });
       return;
     }
@@ -1150,6 +1284,7 @@ export class CombatService implements OnDestroy {
           stars,
           leveledUpHeroes: res.leveledUpHeroes,
           bonusLootName: spoilsPool[(stage.index - 1) % spoilsPool.length] ?? spoilsPool[0],
+          droppedRelicName: res.droppedRelicName,
         });
       }
     }

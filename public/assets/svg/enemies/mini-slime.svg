@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs>
+    <radialGradient id="miniSlime" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#d9f99d"/>
+      <stop offset="60%" stop-color="#84cc16"/>
+      <stop offset="100%" stop-color="#3f6212"/>
+    </radialGradient>
+  </defs>
+  <!-- Shadow -->
+  <ellipse cx="60" cy="104" rx="30" ry="7" fill="rgba(20, 83, 45, 0.5)"/>
+  <!-- Bouncy Droplet Body -->
+  <path
+    d="M 28 94 C 24 70 40 38 60 34 C 80 38 96 70 92 94 C 88 104 32 104 28 94 Z"
+    fill="url(#miniSlime)"
+    stroke="#1a2e05"
+    stroke-width="3.5"
+  />
+  <!-- Gloss Highlight -->
+  <ellipse cx="48" cy="56" rx="9" ry="5" transform="rotate(-25 48 56)" fill="#ecfccb" opacity="0.75"/>
+  <!-- Eyes -->
+  <circle cx="50" cy="72" r="5" fill="#fef08a" stroke="#1a2e05" stroke-width="2"/>
+  <circle cx="50" cy="72" r="2.2" fill="#dc2626"/>
+  <circle cx="70" cy="72" r="5" fill="#fef08a" stroke="#1a2e05" stroke-width="2"/>
+  <circle cx="70" cy="72" r="2.2" fill="#dc2626"/>
+</svg>
+

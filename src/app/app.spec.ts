@@ -68,6 +68,35 @@ describe('Battleheart Application & Core Mechanics Tests', () => {
       expect(reloaded.heroes.knight.weaponTier).toBe(2);
     });
 
+    it('should gate Tier 3 Mithril gear behind Stage 1 completion and unlock after clearing Stage 1', () => {
+      const state = TestBed.inject(GameStateService);
+      // Give plenty of gold by clearing Stage 1 or awarding rewards
+      state.upgradeWeapon('knight'); // Tier 1 -> Tier 2 (Steel)
+      // Tier 3 (Mithril) requires unlockStageIndex: 1
+      expect(state.upgradeWeapon('knight')).toBe(false);
+
+      // Now clear Stage 1 with plenty of gold
+      state.awardBattleRewards(STAGE_CATALOG[0], 500, 100, 3);
+      expect(state.highestClearedStageIndex()).toBe(1);
+      expect(state.unlockedGearTier()).toBe(3);
+      expect(state.upgradeWeapon('knight')).toBe(true);
+      const knight = state.roster().find((h) => h.def.id === 'knight')!;
+      expect(knight.save.weaponTier).toBe(3);
+    });
+
+    it('should allow equipping 2 trinkets simultaneously on a single hero', () => {
+      const state = TestBed.inject(GameStateService);
+      // Award enough gold and clear Stage 1 to unlock first 3 trinkets
+      state.awardBattleRewards(STAGE_CATALOG[0], 800, 100, 3);
+
+      expect(state.buyOrEquipTrinket('knight', 'amulet-vitality')).toBe(true);
+      expect(state.buyOrEquipTrinket('knight', 'wind-boots')).toBe(true);
+
+      const knight = state.roster().find((h) => h.def.id === 'knight')!;
+      expect(knight.save.trinketId).toBe('amulet-vitality');
+      expect(knight.save.secondTrinketId).toBe('wind-boots');
+    });
+
     it('should export and import save profile JSON cleanly', () => {
       const state = TestBed.inject(GameStateService);
       state.hireHero('wizard');

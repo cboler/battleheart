@@ -47,6 +47,32 @@ export class GameStateService {
   public readonly gold = computed(() => this.profile().gold);
   public readonly arenaBestKills = computed(() => this.profile().arenaBestKills);
 
+  /**
+   * Highest campaign stage index cleared (0 at game start, up to 9 after defeating Ignis).
+   * Drives progressive disclosure of Blacksmith equipment tiers and Merchant relics!
+   */
+  public readonly highestClearedStageIndex = computed(() => {
+    const completed = new Set(this.profile().completedStageIds);
+    let maxIdx = 0;
+    for (const st of STAGE_CATALOG) {
+      if (!st.isArena && completed.has(st.id) && st.index > maxIdx) {
+        maxIdx = st.index;
+      }
+    }
+    return maxIdx;
+  });
+
+  public readonly unlockedGearTier = computed(() => {
+    const cleared = this.highestClearedStageIndex();
+    let maxTier = 2;
+    for (const wt of WEAPON_TIERS) {
+      if (cleared >= wt.unlockStageIndex && wt.tier > maxTier) {
+        maxTier = wt.tier;
+      }
+    }
+    return maxTier;
+  });
+
   public readonly allHeroIds = Object.keys(HERO_CATALOG) as HeroClassId[];
 
   public readonly roster = computed<ComputedHeroStats[]>(() => {
@@ -170,10 +196,11 @@ export class GameStateService {
   public upgradeWeapon(classId: HeroClassId): boolean {
     const p = this.profile();
     const heroSave = p.heroes[classId];
-    if (!heroSave || !heroSave.unlocked || heroSave.weaponTier >= 6) return false;
+    if (!heroSave || !heroSave.unlocked || heroSave.weaponTier >= 7) return false;
 
     const nextTier = WEAPON_TIERS[heroSave.weaponTier]; // 0-indexed array, tier 2 is index 1
     if (!nextTier || p.gold < nextTier.cost) return false;
+    if (this.highestClearedStageIndex() < nextTier.unlockStageIndex) return false;
 
     this.commitProfile({
       ...p,
@@ -193,10 +220,11 @@ export class GameStateService {
   public upgradeArmor(classId: HeroClassId): boolean {
     const p = this.profile();
     const heroSave = p.heroes[classId];
-    if (!heroSave || !heroSave.unlocked || heroSave.armorTier >= 6) return false;
+    if (!heroSave || !heroSave.unlocked || heroSave.armorTier >= 7) return false;
 
     const nextTier = ARMOR_TIERS[heroSave.armorTier];
     if (!nextTier || p.gold < nextTier.cost) return false;
+    if (this.highestClearedStageIndex() < nextTier.unlockStageIndex) return false;
 
     this.commitProfile({
       ...p,
@@ -220,7 +248,11 @@ export class GameStateService {
     if (!heroSave || !trinket) return false;
 
     const isOwned = p.ownedTrinkets.includes(trinketId);
-    if (!isOwned && p.gold < trinket.cost) return false;
+    if (!isOwned) {
+      if (p.gold < trinket.cost || this.highestClearedStageIndex() < trinket.unlockStageIndex) {
+        return false;
+      }
+    }
 
     const nextGold = isOwned ? p.gold : p.gold - trinket.cost;
     const nextOwned = isOwned ? p.ownedTrinkets : [...p.ownedTrinkets, trinketId];
@@ -228,14 +260,34 @@ export class GameStateService {
     // Unequip from any other hero if already equipped elsewhere
     const updatedHeroes = { ...p.heroes };
     for (const id of this.allHeroIds) {
+      if (id === classId) continue;
       if (updatedHeroes[id].trinketId === trinketId) {
         updatedHeroes[id] = { ...updatedHeroes[id], trinketId: null };
       }
+      if (updatedHeroes[id].secondTrinketId === trinketId) {
+        updatedHeroes[id] = { ...updatedHeroes[id], secondTrinketId: null };
+      }
     }
-    updatedHeroes[classId] = {
-      ...updatedHeroes[classId],
-      trinketId: heroSave.trinketId === trinketId ? null : trinketId,
-    };
+
+    const currentPrimary = heroSave.trinketId;
+    const currentSecondary = heroSave.secondTrinketId ?? null;
+
+    if (currentPrimary === trinketId) {
+      updatedHeroes[classId] = { ...updatedHeroes[classId], trinketId: null };
+    } else if (currentSecondary === trinketId) {
+      updatedHeroes[classId] = { ...updatedHeroes[classId], secondTrinketId: null };
+    } else if (!currentPrimary) {
+      updatedHeroes[classId] = { ...updatedHeroes[classId], trinketId: trinketId };
+    } else if (!currentSecondary) {
+      updatedHeroes[classId] = { ...updatedHeroes[classId], secondTrinketId: trinketId };
+    } else {
+      // Shift primary to secondary and equip new relic in primary slot
+      updatedHeroes[classId] = {
+        ...updatedHeroes[classId],
+        trinketId: trinketId,
+        secondTrinketId: currentPrimary,
+      };
+    }
 
     this.commitProfile({
       ...p,
@@ -275,7 +327,7 @@ export class GameStateService {
     xpEarned: number,
     stars: number,
     arenaKills = 0,
-  ): { leveledUpHeroes: string[] } {
+  ): { leveledUpHeroes: string[]; droppedRelicName: string | null } {
     const p = this.profile();
     const updatedHeroes = { ...p.heroes };
     const leveledUpHeroes: string[] = [];
@@ -312,6 +364,21 @@ export class GameStateService {
 
     const prevStars = p.stageStars[stage.id] ?? 0;
 
+    // Check Boss / Arena Best-in-Slot Relic Drop!
+    let droppedRelicName: string | null = null;
+    const nextOwnedTrinkets = [...p.ownedTrinkets];
+    if (stage.bossDropTrinketId) {
+      const qualifies = stage.isArena ? arenaKills >= 15 : stars > 0;
+      if (qualifies && !nextOwnedTrinkets.includes(stage.bossDropTrinketId)) {
+        // 65% drop chance on 1-2 star clear, 100% guaranteed on 3-star clear or Arena 15+ kills!
+        if (stars >= 3 || stage.isArena || Math.random() < 0.65) {
+          nextOwnedTrinkets.push(stage.bossDropTrinketId);
+          const relicDef = TRINKET_CATALOG.find((t) => t.id === stage.bossDropTrinketId);
+          droppedRelicName = relicDef?.name ?? null;
+        }
+      }
+    }
+
     this.commitProfile({
       ...p,
       gold: p.gold + goldEarned,
@@ -321,17 +388,21 @@ export class GameStateService {
         [stage.id]: Math.max(prevStars, stars),
       },
       arenaBestKills: Math.max(p.arenaBestKills, arenaKills),
+      ownedTrinkets: nextOwnedTrinkets,
       heroes: updatedHeroes,
     });
 
-    return { leveledUpHeroes };
+    return { leveledUpHeroes, droppedRelicName };
   }
 
   public computeHeroStats(classId: HeroClassId, save: HeroSaveState): ComputedHeroStats {
     const def = HERO_CATALOG[classId];
     const weaponBonus = WEAPON_TIERS[save.weaponTier - 1]?.bonusStat ?? 0;
     const armorBonus = ARMOR_TIERS[save.armorTier - 1]?.bonusStat ?? 0;
-    const trinket = TRINKET_CATALOG.find((t) => t.id === save.trinketId);
+    const equippedTrinkets = [
+      TRINKET_CATALOG.find((t) => t.id === save.trinketId),
+      TRINKET_CATALOG.find((t) => t.id === save.secondTrinketId),
+    ].filter((t): t is NonNullable<typeof t> => Boolean(t));
 
     let maxHp = def.baseHp + (save.level - 1) * def.hpPerLevel + armorBonus;
     let attack = def.baseAttack + (save.level - 1) * def.attackPerLevel + weaponBonus;
@@ -452,12 +523,15 @@ export class GameStateService {
       }
     }
 
-    if (trinket) {
+    for (const trinket of equippedTrinkets) {
       if (trinket.hpBonusPct) maxHp *= 1 + trinket.hpBonusPct;
       if (trinket.attackBonusPct) attack *= 1 + trinket.attackBonusPct;
+      if (trinket.defenseBonus) defense += trinket.defenseBonus;
+      if (trinket.critBonusPct) critChance += trinket.critBonusPct;
       if (trinket.cooldownReductionPct) cooldownMultiplier *= 1 - trinket.cooldownReductionPct;
       if (trinket.speedBonusPct) moveSpeed *= 1 + trinket.speedBonusPct;
       if (trinket.lifestealPct) lifesteal += trinket.lifestealPct;
+      if (trinket.regenPct) regenPctPerSec += trinket.regenPct;
     }
 
     return {

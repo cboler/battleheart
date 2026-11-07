@@ -7,6 +7,9 @@ export type EnemyId =
   | 'goblin-scout'
   | 'goblin-archer'
   | 'goblin-shaman'
+  | 'giant-slime'
+  | 'mini-slime'
+  | 'king-slime'
   | 'orc-brute'
   | 'skeleton-warrior'
   | 'dark-necromancer'
@@ -66,6 +69,8 @@ export interface EquipmentTier {
   name: string;
   bonusStat: number;
   cost: number;
+  unlockStageIndex: number;
+  isBestInSlot?: boolean;
 }
 
 export interface HeroClassDefinition {
@@ -99,9 +104,10 @@ export interface HeroSaveState {
   inParty: boolean;
   level: number;
   xp: number;
-  weaponTier: number; // 1 to 6
-  armorTier: number; // 1 to 6
+  weaponTier: number; // 1 to 7
+  armorTier: number; // 1 to 7
   trinketId: string | null;
+  secondTrinketId?: string | null;
   skillChoices: {
     tier1: SkillChoice;
     tier2: SkillChoice;
@@ -115,11 +121,17 @@ export interface TrinketDefinition {
   description: string;
   icon: string;
   cost: number;
+  unlockStageIndex: number;
+  isBestInSlot?: boolean;
+  bossDropFrom?: string;
   hpBonusPct?: number;
   attackBonusPct?: number;
+  defenseBonus?: number;
+  critBonusPct?: number;
   cooldownReductionPct?: number;
   speedBonusPct?: number;
   lifestealPct?: number;
+  regenPct?: number;
 }
 
 export interface EnemyDefinition {
@@ -136,7 +148,11 @@ export interface EnemyDefinition {
   attackIntervalSec: number;
   moveSpeed: number;
   scale: number;
-  specialAbility?: 'ground-slam' | 'petrify-gaze' | 'fire-breath' | 'dark-mend' | 'enrage';
+  regenHps?: number;
+  splitsOnDeath?: { enemyId: EnemyId; count: number };
+  dropsThreatOnSpecial?: boolean;
+  specialAbility?:
+    'ground-slam' | 'petrify-gaze' | 'fire-breath' | 'dark-mend' | 'enrage' | 'acid-pool';
   specialIntervalSec?: number;
 }
 
@@ -156,6 +172,8 @@ export interface StageDefinition {
   goldReward: number;
   xpReward: number;
   isArena?: boolean;
+  unlocksGearTier?: number;
+  bossDropTrinketId?: string;
   waves: WaveSpawn[][];
   mapX: number; // percentage on world map
   mapY: number;
@@ -249,7 +267,19 @@ export interface ArenaTelegraphEffect {
   label: string;
   elapsed: number;
   duration: number;
-  ability: 'ground-slam' | 'fire-breath';
+  ability: 'ground-slam' | 'fire-breath' | 'acid-pool' | 'petrify-gaze';
+}
+
+export interface ArenaHazardZone {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  dps: number;
+  color: string;
+  label: string;
+  remainingSec: number;
+  maxSec: number;
 }
 
 export interface Projectile {

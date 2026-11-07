@@ -250,6 +250,24 @@
                 </div>
               </div>
 
+              @if (sel.stage.unlocksGearTier || sel.stage.bossDropTrinketId) {
+                <div class="scroll-unlocks-box">
+                  @if (sel.stage.unlocksGearTier; as tierNum) {
+                    <div class="unlock-callout">
+                      ⚒️ <strong>First Clear:</strong> Unlocks Tier {{ tierNum }} Blacksmith Forging
+                    </div>
+                  }
+                  @if (getTrinketById(sel.stage.bossDropTrinketId); as bossRelic) {
+                    <div class="unlock-callout bis-callout">
+                      🌟 <strong>BiS Trophy Drop:</strong> {{ bossRelic.icon }} {{ bossRelic.name }}
+                      @if (gameState.profile().ownedTrinkets.includes(bossRelic.id)) {
+                        <span class="collected-pill">✓ Owned</span>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+
               <button
                 type="button"
                 class="btn-march-battle"
@@ -387,6 +405,22 @@
     <!-- =================================================================== -->
     @if (activeTab() === 'armory') {
       <section class="parchment-chamber" aria-label="Blacksmith Armory">
+        <div class="forge-tier-banner">
+          <div>
+            <strong
+              >⚒️ Royal Blacksmith Forge: Tier {{ gameState.unlockedGearTier() }} / 7
+              Unlocked</strong
+            >
+            <span>
+              Clear further Campaign Stages to unlock Mithril, Runed, Dragonbone, Celestial &amp;
+              Mythic Best-in-Slot (Tier 7) equipment!
+            </span>
+          </div>
+          <span class="forge-stage-pill">
+            Highest Stage Cleared: {{ gameState.highestClearedStageIndex() }} / 9
+          </span>
+        </div>
+
         <div class="hero-selector-strip">
           @for (h of gameState.roster(); track h.def.id) {
             @if (h.save.unlocked) {
@@ -425,88 +459,181 @@
                 <div><strong>Defense:</strong> {{ hero.defense }}</div>
                 <div><strong>Crit Chance:</strong> {{ (hero.critChance * 100).toFixed(0) }}%</div>
               </div>
+
+              <!-- Dual Equipped Trinket Slots (Classic Battleheart 2-Slot Loadout) -->
+              <div class="equipped-trinkets-slots" aria-label="Equipped Relics">
+                <div class="trinket-slot-pill">
+                  <span class="slot-num">Relic 1:</span>
+                  @if (getTrinketById(hero.save.trinketId); as t1) {
+                    <strong>{{ t1.icon }} {{ t1.name }}</strong>
+                  } @else {
+                    <span class="empty-slot">Empty Slot</span>
+                  }
+                </div>
+                <div class="trinket-slot-pill">
+                  <span class="slot-num">Relic 2:</span>
+                  @if (getTrinketById(hero.save.secondTrinketId); as t2) {
+                    <strong>{{ t2.icon }} {{ t2.name }}</strong>
+                  } @else {
+                    <span class="empty-slot">Empty Slot</span>
+                  }
+                </div>
+              </div>
             </div>
 
             <div class="upgrade-columns">
               <!-- Weapon Upgrade Card -->
-              <div class="equip-card">
-                <span class="equip-tier">Tier {{ hero.save.weaponTier }} / 6 Weapon</span>
+              <div class="equip-card" [class.is-bis]="hero.save.weaponTier >= 7">
+                <span class="equip-tier">
+                  Tier {{ hero.save.weaponTier }} / 7 Weapon
+                  @if (hero.save.weaponTier >= 7) {
+                    • 🌟 BEST IN SLOT
+                  }
+                </span>
                 <h4>⚔️ {{ hero.weaponName }}</h4>
                 @if (nextWeaponTier(hero.save.weaponTier); as nextW) {
+                  @let tierUnlocked =
+                    gameState.highestClearedStageIndex() >= nextW.unlockStageIndex;
                   <p>
-                    Forge <strong>{{ hero.def.weaponNames[hero.save.weaponTier] }}</strong> (+{{
+                    Next: <strong>{{ hero.def.weaponNames[hero.save.weaponTier] }}</strong> (+{{
                       nextW.bonusStat
                     }}
                     Power)
+                    @if (nextW.isBestInSlot) {
+                      <span class="bis-tag">🌟 BiS</span>
+                    }
                   </p>
-                  <button
-                    type="button"
-                    class="btn-gold"
-                    id="upgrade-weapon-btn"
-                    [disabled]="gameState.gold() < nextW.cost"
-                    (click)="gameState.upgradeWeapon(hero.def.id)"
-                  >
-                    🪙 Forge Weapon ({{ nextW.cost }}g)
-                  </button>
+                  @if (tierUnlocked) {
+                    <button
+                      type="button"
+                      class="btn-gold"
+                      id="upgrade-weapon-btn"
+                      [disabled]="gameState.gold() < nextW.cost"
+                      (click)="gameState.upgradeWeapon(hero.def.id)"
+                    >
+                      🪙 Forge {{ nextW.name }} ({{ nextW.cost }}g)
+                    </button>
+                  } @else {
+                    <div class="tier-gate-notice" id="upgrade-weapon-locked">
+                      🔒 Clear Stage {{ nextW.unlockStageIndex }} to unlock {{ nextW.name }} Tier
+                      {{ nextW.tier }} Forging
+                    </div>
+                  }
                 } @else {
-                  <p class="maxed-badge">🌟 Celestial Masterwork Forged!</p>
+                  <p class="maxed-badge">🌟 Mythic Best-in-Slot Weapon Forged!</p>
                 }
               </div>
 
               <!-- Armor Upgrade Card -->
-              <div class="equip-card">
-                <span class="equip-tier">Tier {{ hero.save.armorTier }} / 6 Armor</span>
+              <div class="equip-card" [class.is-bis]="hero.save.armorTier >= 7">
+                <span class="equip-tier">
+                  Tier {{ hero.save.armorTier }} / 7 Armor
+                  @if (hero.save.armorTier >= 7) {
+                    • 🌟 BEST IN SLOT
+                  }
+                </span>
                 <h4>🛡️ {{ hero.armorName }}</h4>
                 @if (nextArmorTier(hero.save.armorTier); as nextA) {
+                  @let armorUnlocked =
+                    gameState.highestClearedStageIndex() >= nextA.unlockStageIndex;
                   <p>
-                    Forge <strong>{{ hero.def.armorNames[hero.save.armorTier] }}</strong> (+{{
+                    Next: <strong>{{ hero.def.armorNames[hero.save.armorTier] }}</strong> (+{{
                       nextA.bonusStat
                     }}
                     Max HP)
+                    @if (nextA.isBestInSlot) {
+                      <span class="bis-tag">🌟 BiS</span>
+                    }
                   </p>
-                  <button
-                    type="button"
-                    class="btn-gold"
-                    id="upgrade-armor-btn"
-                    [disabled]="gameState.gold() < nextA.cost"
-                    (click)="gameState.upgradeArmor(hero.def.id)"
-                  >
-                    🪙 Forge Armor ({{ nextA.cost }}g)
-                  </button>
+                  @if (armorUnlocked) {
+                    <button
+                      type="button"
+                      class="btn-gold"
+                      id="upgrade-armor-btn"
+                      [disabled]="gameState.gold() < nextA.cost"
+                      (click)="gameState.upgradeArmor(hero.def.id)"
+                    >
+                      🪙 Forge {{ nextA.name }} ({{ nextA.cost }}g)
+                    </button>
+                  } @else {
+                    <div class="tier-gate-notice" id="upgrade-armor-locked">
+                      🔒 Clear Stage {{ nextA.unlockStageIndex }} to unlock {{ nextA.name }} Tier
+                      {{ nextA.tier }} Forging
+                    </div>
+                  }
                 } @else {
-                  <p class="maxed-badge">🌟 Celestial Masterwork Forged!</p>
+                  <p class="maxed-badge">🌟 Mythic Best-in-Slot Armor Forged!</p>
                 }
               </div>
             </div>
           </div>
 
-          <h3 class="subsection-heading">Royal Relic Trinkets (1 Equipped per Hero)</h3>
+          <h3 class="subsection-heading">
+            Royal Relics &amp; Boss BiS Trophies (Equip Up to 2 per Hero)
+          </h3>
           <div class="trinkets-grid">
             @for (trinket of trinkets; track trinket.id) {
               @let owned = gameState.profile().ownedTrinkets.includes(trinket.id);
-              @let equipped = hero.save.trinketId === trinket.id;
-              <div class="trinket-card" [class.equipped]="equipped">
+              @let equippedSlot =
+                hero.save.trinketId === trinket.id
+                  ? 1
+                  : hero.save.secondTrinketId === trinket.id
+                    ? 2
+                    : 0;
+              @let unlocked =
+                owned || gameState.highestClearedStageIndex() >= trinket.unlockStageIndex;
+              <div
+                class="trinket-card"
+                [class.equipped]="equippedSlot > 0"
+                [class.is-bis]="trinket.isBestInSlot"
+                [class.is-locked-relic]="!unlocked"
+              >
                 <div class="trinket-header">
-                  <span class="trinket-icon">{{ trinket.icon }}</span>
+                  <span class="trinket-icon">{{ unlocked ? trinket.icon : '🔒' }}</span>
                   <div>
-                    <h4>{{ trinket.name }}</h4>
-                    <p>{{ trinket.description }}</p>
+                    <div class="trinket-title-row">
+                      <h4>{{ unlocked ? trinket.name : 'Undiscovered Relic' }}</h4>
+                      @if (trinket.isBestInSlot) {
+                        <span class="bis-tag">🌟 BiS</span>
+                      }
+                    </div>
+                    @if (unlocked) {
+                      <p>{{ trinket.description }}</p>
+                      @if (trinket.bossDropFrom) {
+                        <small class="boss-drop-hint">
+                          💀 Drops from: {{ trinket.bossDropFrom }}
+                        </small>
+                      }
+                    } @else {
+                      <p class="locked-relic-desc">
+                        Unlocks after clearing Campaign Stage {{ trinket.unlockStageIndex }}.
+                        @if (trinket.bossDropFrom) {
+                          <br />💀 Boss Trophy: {{ trinket.bossDropFrom }}
+                        }
+                      </p>
+                    }
                   </div>
                 </div>
-                <button
-                  type="button"
-                  class="btn-wood"
-                  [disabled]="!owned && gameState.gold() < trinket.cost"
-                  (click)="gameState.buyOrEquipTrinket(hero.def.id, trinket.id)"
-                >
-                  @if (equipped) {
-                    ✓ Equipped on {{ hero.def.name }} (Unequip)
-                  } @else if (owned) {
-                    Equip on {{ hero.def.name }}
-                  } @else {
-                    🪙 Purchase Relic ({{ trinket.cost }}g)
-                  }
-                </button>
+                @if (unlocked) {
+                  <button
+                    type="button"
+                    class="btn-wood"
+                    [disabled]="!owned && gameState.gold() < trinket.cost"
+                    (click)="gameState.buyOrEquipTrinket(hero.def.id, trinket.id)"
+                  >
+                    @if (equippedSlot > 0) {
+                      ✓ Slot {{ equippedSlot }} on {{ hero.def.name }} (Unequip)
+                    } @else if (owned) {
+                      Equip on {{ hero.def.name }}
+                    } @else {
+                      🪙 Purchase Relic ({{ trinket.cost }}g)
+                    }
+                  </button>
+                } @else {
+                  <div class="tier-gate-notice">
+                    🔒 Clear Stage {{ trinket.unlockStageIndex }} to Unlock
+                  </div>
+                }
               </div>
             }
           </div>
@@ -650,6 +777,7 @@
               <li>
                 <strong>Monsters &amp; Bosses:</strong>
                 <code>public/assets/svg/enemies/goblin-scout.svg</code>,
+                <code>giant-slime.svg</code>, <code>mini-slime.svg</code>,
                 <code>cave-troll.svg</code>, <code>gorgon-queen.svg</code>,
                 <code>dragon-whelp.svg</code>, etc.
               </li>
@@ -798,6 +926,30 @@
           preserveAspectRatio="none"
           aria-hidden="true"
         >
+          <!-- Lingering Corrosive Slime Pools & Dragon Magma Hazard Zones -->
+          @for (hz of combat.hazardZones(); track hz.id) {
+            <ellipse
+              [attr.cx]="hz.x"
+              [attr.cy]="hz.y"
+              [attr.rx]="hz.radius"
+              [attr.ry]="hz.radius * 0.55"
+              [attr.fill]="hz.color"
+              fill-opacity="0.26"
+              [attr.stroke]="hz.color"
+              stroke-width="0.65"
+              stroke-dasharray="2.2 1.2"
+              [attr.opacity]="Math.min(1, hz.remainingSec / 1.5)"
+            />
+            <ellipse
+              [attr.cx]="hz.x - hz.radius * 0.28"
+              [attr.cy]="hz.y - hz.radius * 0.1"
+              [attr.rx]="hz.radius * 0.25"
+              [attr.ry]="hz.radius * 0.14"
+              [attr.fill]="hz.color"
+              fill-opacity="0.38"
+            />
+          }
+
           <!-- Boss Ground-Telegraph Danger Zones (Kite heroes out before fill completes!) -->
           @for (tel of combat.telegraphs(); track tel.id) {
             <ellipse
@@ -1105,6 +1257,12 @@
                   <div class="spoils-chest-box" aria-hidden="true">
                     <span class="chest-icon">🧰</span>
                     <span class="chest-name">{{ reward.bonusLootName }}</span>
+                  </div>
+                }
+                @if (reward.droppedRelicName) {
+                  <div class="bis-drop-banner">
+                    🌟 BEST-IN-SLOT RELIC ACQUIRED: <strong>{{ reward.droppedRelicName }}</strong
+                    >!
                   </div>
                 }
                 @if (reward.stars > 0) {
