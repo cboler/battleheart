@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <ellipse cx="60" cy="104" rx="42" ry="8" fill="rgba(0,0,0,0.45)"/>
+  <!-- Wolf Body -->
+  <ellipse cx="66" cy="74" rx="32" ry="18" fill="#334155" stroke="#0f172a" stroke-width="3.5"/>
+  <!-- Wolf Legs -->
+  <rect x="42" y="84" width="9" height="18" rx="4" fill="#1e293b" stroke="#0f172a" stroke-width="3"/>
+  <rect x="56" y="86" width="9" height="18" rx="4" fill="#1e293b" stroke="#0f172a" stroke-width="3"/>
+  <rect x="76" y="84" width="9" height="18" rx="4" fill="#1e293b" stroke="#0f172a" stroke-width="3"/>
+  <rect x="88" y="86" width="9" height="18" rx="4" fill="#1e293b" stroke="#0f172a" stroke-width="3"/>
+  <!-- Bushy Tail -->
+  <path d="M96 68 Q114 56 110 78 Q102 82 94 74 Z" fill="#475569" stroke="#0f172a" stroke-width="3"/>
+  <!-- Wolf Head & Snout -->
+  <path d="M48 48 L36 32 L40 50 L28 34 L34 54 L14 62 L20 74 L48 74 Z" fill="#475569" stroke="#0f172a" stroke-width="3.5" stroke-linejoin="round"/>
+  <circle cx="34" cy="58" r="3.5" fill="#fbbf24"/>
+  <!-- Fangs -->
+  <polygon points="20,74 24,80 28,74" fill="#f8fafc"/>
+  <polygon points="28,74 32,80 36,74" fill="#f8fafc"/>
+</svg>
+

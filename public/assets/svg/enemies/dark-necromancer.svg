@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <ellipse cx="60" cy="108" rx="34" ry="8" fill="rgba(0,0,0,0.5)"/>
+  <path d="M34 52 L24 104 L96 104 L86 52 Z" fill="#1e1b4b" stroke="#0f172a" stroke-width="3.5"/>
+  <path d="M48 52 L44 104 M72 52 L76 104" stroke="#a855f7" stroke-width="3"/>
+  <!-- Hooded Skull -->
+  <path d="M34 46 C32 10 88 10 86 46 L78 56 L42 56 Z" fill="#312e81" stroke="#0f172a" stroke-width="3.5"/>
+  <circle cx="60" cy="40" r="15" fill="#0f172a"/>
+  <circle cx="53" cy="40" r="3.5" fill="#c084fc"/>
+  <circle cx="67" cy="40" r="3.5" fill="#c084fc"/>
+  <!-- Soul Scythe -->
+  <g transform="translate(24, 54)">
+    <rect x="-3" y="-34" width="6" height="80" fill="#334155" stroke="#0f172a" stroke-width="2.5"/>
+    <path d="M0 -34 Q28 -38 36 -18 Q18 -24 0 -24 Z" fill="#c084fc" stroke="#0f172a" stroke-width="2.5"/>
+  </g>
+</svg>
+

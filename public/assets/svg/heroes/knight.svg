@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="armor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#475569"/>
+    </linearGradient>
+    <linearGradient id="cape" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#991b1b"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <!-- Shadow -->
+  <ellipse cx="60" cy="108" rx="34" ry="8" fill="rgba(0,0,0,0.45)"/>
+  <!-- Cape -->
+  <path d="M35 55 Q20 82 24 102 L55 98 Z" fill="url(#cape)" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"/>
+  <!-- Legs -->
+  <rect x="44" y="86" width="12" height="18" rx="5" fill="#334155" stroke="#0f172a" stroke-width="3"/>
+  <rect x="64" y="86" width="12" height="18" rx="5" fill="#334155" stroke="#0f172a" stroke-width="3"/>
+  <!-- Torso Armor -->
+  <rect x="38" y="54" width="44" height="36" rx="10" fill="url(#armor)" stroke="#0f172a" stroke-width="3.5"/>
+  <path d="M52 56 L60 88 L68 56" fill="none" stroke="#cbd5e1" stroke-width="2"/>
+  <rect x="38" y="76" width="44" height="7" fill="#78350f" stroke="#0f172a" stroke-width="2.5"/>
+  <rect x="55" y="74" width="10" height="11" rx="2" fill="#fbbf24" stroke="#0f172a" stroke-width="2"/>
+  <!-- Sword (Back/Left hand) -->
+  <g transform="translate(82, 46) rotate(22)">
+    <rect x="-4" y="-36" width="9" height="44" rx="3" fill="#e2e8f0" stroke="#0f172a" stroke-width="3"/>
+    <line x1="0.5" y1="-30" x2="0.5" y2="4" stroke="#94a3b8" stroke-width="2"/>
+    <rect x="-12" y="4" width="25" height="6" rx="2" fill="#fbbf24" stroke="#0f172a" stroke-width="2.5"/>
+    <rect x="-3.5" y="10" width="8" height="10" rx="2" fill="#78350f" stroke="#0f172a" stroke-width="2.5"/>
+  </g>
+  <!-- Chibi Head & Great Helm -->
+  <path d="M34 32 C34 14 86 14 86 32 L88 56 C88 62 32 62 32 56 Z" fill="url(#armor)" stroke="#0f172a" stroke-width="3.5"/>
+  <!-- Plume -->
+  <path d="M56 16 Q60 2 76 6 Q70 18 64 19 Z" fill="#ef4444" stroke="#0f172a" stroke-width="3"/>
+  <!-- Visor Slit & Glowing Eyes -->
+  <rect x="44" y="36" width="34" height="9" rx="4" fill="#0f172a"/>
+  <circle cx="54" cy="40.5" r="2.8" fill="#38bdf8"/>
+  <circle cx="68" cy="40.5" r="2.8" fill="#38bdf8"/>
+  <!-- Visor Cross Trim -->
+  <path d="M61 24 L61 56 M42 48 L80 48" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>
+  <!-- Kite Shield (Front) -->
+  <path d="M22 52 L54 52 L54 74 C54 90 38 100 38 100 C38 100 22 90 22 74 Z" fill="url(#shield)" stroke="#fbbf24" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M38 57 L38 93 M27 70 L49 70" stroke="#fbbf24" stroke-width="3.5" stroke-linecap="round"/>
+</svg>
+

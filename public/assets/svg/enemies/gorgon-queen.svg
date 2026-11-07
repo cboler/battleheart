@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <ellipse cx="60" cy="110" rx="44" ry="9" fill="rgba(0,0,0,0.55)"/>
+  <!-- Coiled Serpent Tail -->
+  <path d="M30 98 Q16 82 38 78 L82 78 Q106 84 90 102 Z" fill="#047857" stroke="#0f172a" stroke-width="4"/>
+  <!-- Torso -->
+  <path d="M40 50 L36 82 L84 82 L80 50 Z" fill="#059669" stroke="#0f172a" stroke-width="3.5"/>
+  <!-- Snake Hair Tendrils -->
+  <path d="M42 28 Q26 10 34 6 M60 22 Q60 4 70 6 M78 28 Q94 10 86 6" fill="none" stroke="#10b981" stroke-width="5" stroke-linecap="round"/>
+  <!-- Head & Crown -->
+  <circle cx="60" cy="36" r="19" fill="#6ee7b7" stroke="#0f172a" stroke-width="3.5"/>
+  <polygon points="46,20 53,10 60,18 67,10 74,20" fill="#fbbf24" stroke="#0f172a" stroke-width="2.5"/>
+  <circle cx="53" cy="36" r="3.5" fill="#fde047"/>
+  <circle cx="67" cy="36" r="3.5" fill="#fde047"/>
+</svg>
+

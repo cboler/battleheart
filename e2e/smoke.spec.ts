@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Responsive Shell Smoke Tests', () => {
-  test('should load application cleanly without runtime errors or horizontal overflow', async ({
+test.describe('Battleheart Responsive Shell & Gameplay Smoke Tests', () => {
+  test('should load Realm Hub, navigate tabs, enter battlefield, and verify zero horizontal overflow', async ({
     page,
   }) => {
     const consoleErrors: string[] = [];
@@ -17,41 +17,70 @@ test.describe('Responsive Shell Smoke Tests', () => {
     await page.goto('/');
 
     // 1. Root shell and brand verification
-    await expect(page.locator('.brand-title')).toBeVisible();
-    await expect(page.locator('#starter-title')).toHaveText('Angular PWA Starter');
+    await expect(page.locator('.brand-title')).toHaveText('Battleheart');
+    await expect(page.locator('#starter-title')).toHaveText('Battleheart');
 
     // 2. Primary layout elements are visible
     await expect(page.locator('header[role="banner"]')).toBeVisible();
     await expect(page.locator('main[role="main"]')).toBeVisible();
-    await expect(page.locator('footer[role="contentinfo"]')).toBeVisible();
 
-    // 3. Prevent accidental horizontal overflow
+    // 3. Prevent accidental horizontal overflow on Realm Hub
     const hasHorizontalOverflow = await page.evaluate(() => {
       return document.documentElement.scrollWidth > window.innerWidth;
     });
     expect(hasHorizontalOverflow).toBeFalsy();
 
-    // 4. Client-side navigation to status screen
-    const statusLink = page.locator('#view-status-btn');
-    await expect(statusLink).toBeVisible();
-    await statusLink.click();
+    // 4. Switch to Tavern tab and verify 8 hero classes are rendered
+    await page.locator('#tab-tavern').click();
+    await expect(page.locator('.hero-card')).toHaveCount(8);
 
-    await expect(page).toHaveURL(/.*status/);
-    await expect(page.locator('#status-heading')).toBeVisible();
-    await expect(page.locator('#base-uri-val')).toBeVisible();
+    // 5. Switch to Map tab and launch Stage 1 Battle
+    await page.locator('#tab-map').click();
+    await page.locator('#start-stage-1').click();
 
-    // Verify no horizontal overflow on secondary route
-    const statusOverflow = await page.evaluate(() => {
+    const arena = page.locator('#battlefield-arena');
+    await expect(arena).toBeVisible();
+    await expect(page.locator('.arena-unit.is-hero')).toHaveCount(3);
+    await expect(page.locator('.arena-unit.is-enemy').first()).toBeVisible();
+
+    // Test line-drawing drag command from Hero 1 to the center of the arena
+    const firstHero = page.locator('.arena-unit.is-hero').first();
+    const heroBox = await firstHero.boundingBox();
+    const arenaBox = await arena.boundingBox();
+    if (heroBox && arenaBox) {
+      await page.mouse.move(heroBox.x + heroBox.width / 2, heroBox.y + heroBox.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(
+        arenaBox.x + arenaBox.width * 0.55,
+        arenaBox.y + arenaBox.height * 0.65,
+      );
+      await page.mouse.up();
+    }
+
+    // Trigger an active skill from the bottom dock
+    await page.locator('.skill-btn').first().click();
+
+    // Verify no horizontal overflow inside Battlefield Arena
+    const battleOverflow = await page.evaluate(() => {
       return document.documentElement.scrollWidth > window.innerWidth;
     });
-    expect(statusOverflow).toBeFalsy();
+    expect(battleOverflow).toBeFalsy();
 
-    // 5. Navigate back to Home
+    // Retreat back to Realm
+    await page.locator('.hud-btn-retreat').click();
+    await expect(page.locator('#starter-title')).toBeVisible();
+
+    // 6. Navigate to Status diagnostics via top nav
+    await page.locator('#nav-link-status').click();
+    await expect(page).toHaveURL(/.*status/);
+    await expect(page.locator('#status-heading')).toBeVisible();
+
+    // 7. Navigate back to Realm
     await page.locator('#back-home-link').click();
     await expect(page).toHaveURL(/\/?$/);
     await expect(page.locator('#starter-title')).toBeVisible();
 
-    // 6. Zero unhandled console errors or exceptions
+    // 8. Zero unhandled console errors or exceptions
     expect(consoleErrors).toEqual([]);
   });
 });

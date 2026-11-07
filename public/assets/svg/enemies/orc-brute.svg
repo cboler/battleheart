@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <ellipse cx="60" cy="108" rx="38" ry="9" fill="rgba(0,0,0,0.5)"/>
+  <rect x="40" y="84" width="14" height="20" rx="5" fill="#365314" stroke="#0f172a" stroke-width="3.5"/>
+  <rect x="66" y="84" width="14" height="20" rx="5" fill="#365314" stroke="#0f172a" stroke-width="3.5"/>
+  <!-- Hulking Torso -->
+  <rect x="30" y="48" width="60" height="42" rx="12" fill="#4d7c0f" stroke="#0f172a" stroke-width="4"/>
+  <!-- Spiked Pauldrons -->
+  <path d="M22 56 Q32 40 44 54 Z" fill="#475569" stroke="#0f172a" stroke-width="3"/>
+  <path d="M98 56 Q88 40 76 54 Z" fill="#475569" stroke="#0f172a" stroke-width="3"/>
+  <!-- Head & Tusks -->
+  <circle cx="60" cy="36" r="22" fill="#4d7c0f" stroke="#0f172a" stroke-width="4"/>
+  <circle cx="51" cy="34" r="4" fill="#ef4444"/>
+  <circle cx="69" cy="34" r="4" fill="#ef4444"/>
+  <polygon points="46,48 50,38 54,48" fill="#fef08a" stroke="#0f172a" stroke-width="2"/>
+  <polygon points="66,48 70,38 74,48" fill="#fef08a" stroke="#0f172a" stroke-width="2"/>
+  <!-- Cleaver Greataxe -->
+  <g transform="translate(20, 56) rotate(-20)">
+    <rect x="-3" y="-30" width="6" height="68" fill="#78350f" stroke="#0f172a" stroke-width="2.5"/>
+    <path d="M-3 -26 C-26 -30 -26 4 -3 0 Z" fill="#94a3b8" stroke="#0f172a" stroke-width="3"/>
+  </g>
+</svg>
+

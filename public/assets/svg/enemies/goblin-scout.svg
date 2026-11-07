@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <ellipse cx="60" cy="108" rx="28" ry="7" fill="rgba(0,0,0,0.45)"/>
+  <!-- Legs -->
+  <rect x="46" y="86" width="10" height="18" rx="4" fill="#65a30d" stroke="#0f172a" stroke-width="3"/>
+  <rect x="64" y="86" width="10" height="18" rx="4" fill="#65a30d" stroke="#0f172a" stroke-width="3"/>
+  <!-- Ragged Leather Vest -->
+  <rect x="42" y="58" width="36" height="30" rx="8" fill="#78350f" stroke="#0f172a" stroke-width="3.5"/>
+  <!-- Pointy Goblin Ears -->
+  <polygon points="38,40 16,30 36,52" fill="#84cc16" stroke="#0f172a" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="82,40 104,30 84,52" fill="#84cc16" stroke="#0f172a" stroke-width="3" stroke-linejoin="round"/>
+  <!-- Head -->
+  <circle cx="60" cy="44" r="20" fill="#84cc16" stroke="#0f172a" stroke-width="3.5"/>
+  <!-- Glowing Red Eyes & Fangs -->
+  <circle cx="52" cy="42" r="4" fill="#ef4444" stroke="#0f172a" stroke-width="1.5"/>
+  <circle cx="68" cy="42" r="4" fill="#ef4444" stroke="#0f172a" stroke-width="1.5"/>
+  <path d="M50 53 L70 53" stroke="#0f172a" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="52,53 55,47 58,53" fill="#f8fafc" stroke="#0f172a" stroke-width="1.5"/>
+  <polygon points="62,53 65,47 68,53" fill="#f8fafc" stroke="#0f172a" stroke-width="1.5"/>
+  <!-- Rusty Shiv -->
+  <g transform="translate(26, 68) rotate(-30)">
+    <polygon points="0,-24 -6,0 6,0" fill="#94a3b8" stroke="#0f172a" stroke-width="2.5"/>
+    <rect x="-3" y="0" width="6" height="10" fill="#78350f" stroke="#0f172a" stroke-width="2"/>
+  </g>
+</svg>
+

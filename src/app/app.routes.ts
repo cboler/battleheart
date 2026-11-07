@@ -6,12 +6,12 @@ export const routes: Routes = [
   {
     path: '',
     component: HomeComponent,
-    title: 'Home • Angular PWA Starter',
+    title: 'Battleheart • Tactical Party RPG',
   },
   {
     path: 'status',
     component: StatusComponent,
-    title: 'Status & Diagnostics • Angular PWA Starter',
+    title: 'Diagnostics • Battleheart',
   },
   {
     path: '**',

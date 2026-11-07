@@ -1,0 +1,838 @@
+<div class="bh-shell">
+  <!-- TOP REALM BAR (shown when not in active combat) -->
+  @if (!combat.isRunning()) {
+    <section class="realm-banner" aria-label="Warband Command">
+      <div class="realm-top-row">
+        <div class="title-block">
+          <h1 id="starter-title" class="game-title">Battleheart</h1>
+          <p class="game-subtitle">
+            Tactical Line-Drawing Party RPG • Drag from Heroes to Allies or Foes
+          </p>
+        </div>
+
+        <div class="treasury-strip">
+          <div class="gold-pill" id="gold-display" aria-label="Party Gold">
+            <span class="coin-icon" aria-hidden="true">🪙</span>
+            <span class="gold-amount">{{ gameState.gold() }}</span>
+            <span class="gold-label">Gold</span>
+          </div>
+
+          <div class="slot-pill">
+            <span class="slot-label">Save:</span>
+            @for (slot of [1, 2, 3]; track slot) {
+              <button
+                type="button"
+                class="slot-btn"
+                [class.active]="gameState.activeSlot() === slot"
+                (click)="switchSlot(slot)"
+                [attr.aria-label]="'Save Slot ' + slot"
+              >
+                #{{ slot }}
+              </button>
+            }
+          </div>
+
+          <button
+            type="button"
+            class="icon-btn"
+            (click)="audio.toggleMute()"
+            [attr.aria-label]="audio.muted() ? 'Unmute Sound' : 'Mute Sound'"
+          >
+            {{ audio.muted() ? '🔇' : '🔊' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- ACTIVE PARTY STRIP (Up to 4 Heroes) -->
+      <div class="party-bar" aria-label="Active Party">
+        <span class="party-bar-label">Active Party ({{ gameState.partyHeroes().length }}/4):</span>
+        <div class="party-avatars">
+          @for (hero of gameState.partyHeroes(); track hero.def.id) {
+            <button
+              type="button"
+              class="party-chip"
+              [class.selected]="inspectedHeroId() === hero.def.id"
+              (click)="inspectHero(hero.def.id)"
+            >
+              <img [src]="hero.def.svgAsset" [alt]="hero.def.name" class="chip-avatar" />
+              <div class="chip-meta">
+                <span class="chip-name">{{ hero.def.name }}</span>
+                <span class="chip-lvl">Lv.{{ hero.save.level }} {{ hero.def.title }}</span>
+              </div>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- NAVIGATION TABS -->
+      <div class="hub-tabs" role="tablist" aria-label="Kingdom Sections">
+        <button
+          type="button"
+          role="tab"
+          id="tab-map"
+          class="hub-tab"
+          [class.active]="activeTab() === 'map'"
+          [attr.aria-selected]="activeTab() === 'map'"
+          (click)="setTab('map')"
+        >
+          🗺️ World Map
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="tab-tavern"
+          class="hub-tab"
+          [class.active]="activeTab() === 'tavern'"
+          [attr.aria-selected]="activeTab() === 'tavern'"
+          (click)="setTab('tavern')"
+        >
+          🍺 Tavern &amp; Party
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="tab-armory"
+          class="hub-tab"
+          [class.active]="activeTab() === 'armory'"
+          [attr.aria-selected]="activeTab() === 'armory'"
+          (click)="setTab('armory')"
+        >
+          ⚒️ Armory &amp; Relics
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="tab-academy"
+          class="hub-tab"
+          [class.active]="activeTab() === 'academy'"
+          [attr.aria-selected]="activeTab() === 'academy'"
+          (click)="setTab('academy')"
+        >
+          📜 Academy Skills
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="tab-saves"
+          class="hub-tab"
+          [class.active]="activeTab() === 'saves'"
+          [attr.aria-selected]="activeTab() === 'saves'"
+          (click)="setTab('saves')"
+        >
+          💾 Saves &amp; Art
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB 1: WORLD MAP & CAMPAIGN STAGES -->
+    @if (activeTab() === 'map') {
+      <section class="hub-panel" aria-label="Campaign Stages">
+        <div class="stages-grid">
+          @for (entry of gameState.stages(); track entry.stage.id) {
+            <article
+              class="stage-card"
+              [class.locked]="!entry.unlocked"
+              [class.completed]="entry.completed"
+              [class.arena-card]="entry.stage.isArena"
+            >
+              <div class="stage-card-header">
+                <span class="stage-badge">
+                  @if (entry.stage.isArena) {
+                    🏆 Best: {{ gameState.arenaBestKills() }} Kills
+                  } @else if (entry.completed) {
+                    {{ '⭐'.repeat(entry.stars) }}
+                  } @else if (entry.unlocked) {
+                    ⚔️ Ready
+                  } @else {
+                    🔒 Locked
+                  }
+                </span>
+                <span class="stage-rec">Rec. Lv.{{ entry.stage.recommendedLevel }}</span>
+              </div>
+
+              <h2 class="stage-name">{{ entry.stage.name }}</h2>
+              <p class="stage-desc">{{ entry.stage.subtitle }}</p>
+
+              <div class="stage-footer">
+                <div class="stage-rewards">
+                  <span>🪙 +{{ entry.stage.goldReward }}g</span>
+                  <span>✨ +{{ entry.stage.xpReward }} XP</span>
+                </div>
+                <button
+                  type="button"
+                  class="btn-battle"
+                  [id]="'start-' + entry.stage.id"
+                  [disabled]="!entry.unlocked"
+                  (click)="launchStage(entry.stage)"
+                >
+                  {{ entry.stage.isArena ? 'Enter Arena' : 'Enter Battle' }}
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- TAB 2: TAVERN & PARTY ROSTER -->
+    @if (activeTab() === 'tavern') {
+      <section class="hub-panel" aria-label="Tavern Roster">
+        <p class="panel-intro">
+          Recruit up to 8 iconic hero classes and choose up to <strong>4 heroes</strong> for your
+          active battle party.
+        </p>
+        <div class="roster-grid">
+          @for (h of gameState.roster(); track h.def.id) {
+            <article
+              class="hero-card"
+              [class.in-party]="h.save.inParty"
+              [class.locked]="!h.save.unlocked"
+            >
+              <div class="hero-card-top">
+                <img [src]="h.def.svgAsset" [alt]="h.def.name" class="hero-portrait" />
+                <div class="hero-identity">
+                  <span class="role-tag" [style.borderColor]="h.def.accentColor">
+                    {{ h.def.role.toUpperCase() }}
+                  </span>
+                  <h3>{{ h.def.name }}</h3>
+                  <p class="hero-title">{{ h.def.title }} • Lv.{{ h.save.level }}</p>
+                </div>
+              </div>
+
+              <p class="hero-bio">{{ h.def.description }}</p>
+
+              <div class="hero-stats-row">
+                <span>❤️ {{ h.maxHp }} HP</span>
+                <span>{{ h.def.role === 'healer' ? '💚' : '⚔️' }} {{ h.attack }} PWR</span>
+                <span>🛡️ {{ h.defense }} DEF</span>
+              </div>
+
+              <div class="hero-card-actions">
+                @if (!h.save.unlocked) {
+                  <button
+                    type="button"
+                    class="btn-primary"
+                    [disabled]="gameState.gold() < h.def.hireCost"
+                    (click)="gameState.hireHero(h.def.id)"
+                  >
+                    🪙 Hire ({{ h.def.hireCost }}g)
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn-party-toggle"
+                    [class.active]="h.save.inParty"
+                    (click)="gameState.toggleHeroInParty(h.def.id)"
+                  >
+                    {{ h.save.inParty ? '✓ In Active Party' : '+ Add to Party' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-secondary"
+                    (click)="inspectHeroAndOpenArmory(h.def.id)"
+                  >
+                    Gear / Skills
+                  </button>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- TAB 3: ARMORY & TRINKETS -->
+    @if (activeTab() === 'armory') {
+      <section class="hub-panel" aria-label="Blacksmith Armory">
+        <div class="hero-selector-strip">
+          @for (h of gameState.roster(); track h.def.id) {
+            @if (h.save.unlocked) {
+              <button
+                type="button"
+                class="selector-pill"
+                [class.active]="inspectedHeroId() === h.def.id"
+                (click)="inspectHero(h.def.id)"
+              >
+                <img [src]="h.def.svgAsset" [alt]="h.def.name" />
+                <span>{{ h.def.name }}</span>
+              </button>
+            }
+          }
+        </div>
+
+        @if (inspectedHero(); as hero) {
+          <div class="armory-workbench">
+            <div class="hero-showcase">
+              <img [src]="hero.def.svgAsset" [alt]="hero.def.name" class="showcase-svg" />
+              <h3>{{ hero.def.name }} ({{ hero.def.title }})</h3>
+              <p class="xp-bar-label">
+                Level {{ hero.save.level }} • XP: {{ hero.save.xp }} / {{ hero.nextLevelXp }}
+              </p>
+              <div class="stat-grid">
+                <div><strong>Max HP:</strong> {{ hero.maxHp }}</div>
+                <div>
+                  <strong>{{ hero.def.role === 'healer' ? 'Heal Power' : 'Attack' }}:</strong>
+                  {{ hero.attack }}
+                </div>
+                <div><strong>Defense:</strong> {{ hero.defense }}</div>
+                <div><strong>Crit Chance:</strong> {{ (hero.critChance * 100).toFixed(0) }}%</div>
+              </div>
+            </div>
+
+            <div class="upgrade-columns">
+              <!-- Weapon Upgrade Card -->
+              <div class="equip-card">
+                <span class="equip-tier">Tier {{ hero.save.weaponTier }} / 6 Weapon</span>
+                <h4>⚔️ {{ hero.weaponName }}</h4>
+                @if (nextWeaponTier(hero.save.weaponTier); as nextW) {
+                  <p>
+                    Upgrade to
+                    <strong>{{ hero.def.weaponNames[hero.save.weaponTier] }}</strong> (+{{
+                      nextW.bonusStat
+                    }}
+                    Power)
+                  </p>
+                  <button
+                    type="button"
+                    class="btn-primary"
+                    id="upgrade-weapon-btn"
+                    [disabled]="gameState.gold() < nextW.cost"
+                    (click)="gameState.upgradeWeapon(hero.def.id)"
+                  >
+                    🪙 Forge Upgrade ({{ nextW.cost }}g)
+                  </button>
+                } @else {
+                  <p class="maxed-badge">🌟 Celestial Tier Forged!</p>
+                }
+              </div>
+
+              <!-- Armor Upgrade Card -->
+              <div class="equip-card">
+                <span class="equip-tier">Tier {{ hero.save.armorTier }} / 6 Armor</span>
+                <h4>🛡️ {{ hero.armorName }}</h4>
+                @if (nextArmorTier(hero.save.armorTier); as nextA) {
+                  <p>
+                    Upgrade to <strong>{{ hero.def.armorNames[hero.save.armorTier] }}</strong> (+{{
+                      nextA.bonusStat
+                    }}
+                    Max HP)
+                  </p>
+                  <button
+                    type="button"
+                    class="btn-primary"
+                    id="upgrade-armor-btn"
+                    [disabled]="gameState.gold() < nextA.cost"
+                    (click)="gameState.upgradeArmor(hero.def.id)"
+                  >
+                    🪙 Forge Upgrade ({{ nextA.cost }}g)
+                  </button>
+                } @else {
+                  <p class="maxed-badge">🌟 Celestial Tier Forged!</p>
+                }
+              </div>
+            </div>
+          </div>
+
+          <h3 class="subsection-heading">Relic Trinkets (1 Equipped per Hero)</h3>
+          <div class="trinkets-grid">
+            @for (trinket of trinkets; track trinket.id) {
+              @let owned = gameState.profile().ownedTrinkets.includes(trinket.id);
+              @let equipped = hero.save.trinketId === trinket.id;
+              <div class="trinket-card" [class.equipped]="equipped">
+                <div class="trinket-header">
+                  <span class="trinket-icon">{{ trinket.icon }}</span>
+                  <div>
+                    <h4>{{ trinket.name }}</h4>
+                    <p>{{ trinket.description }}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="btn-secondary"
+                  [disabled]="!owned && gameState.gold() < trinket.cost"
+                  (click)="gameState.buyOrEquipTrinket(hero.def.id, trinket.id)"
+                >
+                  @if (equipped) {
+                    ✓ Equipped (Click to Unequip)
+                  } @else if (owned) {
+                    Equip on {{ hero.def.name }}
+                  } @else {
+                    🪙 Buy &amp; Equip ({{ trinket.cost }}g)
+                  }
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    <!-- TAB 4: ACADEMY SKILL TREES -->
+    @if (activeTab() === 'academy') {
+      <section class="hub-panel" aria-label="Academy Skill Trees">
+        <div class="hero-selector-strip">
+          @for (h of gameState.roster(); track h.def.id) {
+            @if (h.save.unlocked) {
+              <button
+                type="button"
+                class="selector-pill"
+                [class.active]="inspectedHeroId() === h.def.id"
+                (click)="inspectHero(h.def.id)"
+              >
+                <img [src]="h.def.svgAsset" [alt]="h.def.name" />
+                <span>{{ h.def.name }} (Lv.{{ h.save.level }})</span>
+              </button>
+            }
+          }
+        </div>
+
+        @if (inspectedHero(); as hero) {
+          <div class="academy-box">
+            <div class="signature-skill-banner">
+              <span class="sig-icon">{{ hero.def.primaryActiveSkill.icon }}</span>
+              <div>
+                <h4>
+                  Signature Skill: {{ hero.def.primaryActiveSkill.name }} ({{
+                    hero.def.primaryActiveSkill.cooldownSec
+                  }}s CD)
+                </h4>
+                <p>{{ hero.def.primaryActiveSkill.description }}</p>
+              </div>
+            </div>
+
+            @for (pair of hero.def.skillTiers; track pair.tier) {
+              @let unlocked = hero.save.level >= pair.unlockLevel;
+              @let currentChoice =
+                pair.tier === 1
+                  ? hero.save.skillChoices.tier1
+                  : pair.tier === 2
+                    ? hero.save.skillChoices.tier2
+                    : hero.save.skillChoices.tier3;
+              <div class="skill-tier-row" [class.tier-locked]="!unlocked">
+                <div class="tier-badge">
+                  <span>Tier {{ pair.tier }}</span>
+                  <small>Unlocks Lv.{{ pair.unlockLevel }}</small>
+                </div>
+
+                <div class="tier-choices">
+                  <button
+                    type="button"
+                    class="skill-choice-card"
+                    [class.selected]="currentChoice === 'A'"
+                    (click)="gameState.selectSkillChoice(hero.def.id, pair.tier, 'A')"
+                  >
+                    <span class="sk-icon">{{ pair.optionA.icon }}</span>
+                    <div>
+                      <h5>{{ pair.optionA.name }}</h5>
+                      <p>{{ pair.optionA.description }}</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="skill-choice-card"
+                    [class.selected]="currentChoice === 'B'"
+                    (click)="gameState.selectSkillChoice(hero.def.id, pair.tier, 'B')"
+                  >
+                    <span class="sk-icon">{{ pair.optionB.icon }}</span>
+                    <div>
+                      <h5>{{ pair.optionB.name }}</h5>
+                      <p>{{ pair.optionB.description }}</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    <!-- TAB 5: SAVES, CUSTOM SVG ASSET GUIDE & DIAGNOSTICS -->
+    @if (activeTab() === 'saves') {
+      <section class="hub-panel" aria-label="Save Data and Custom SVG Assets">
+        <div class="saves-grid">
+          <div class="save-card">
+            <h3>💾 Local Save Backup (Slot #{{ gameState.activeSlot() }})</h3>
+            <p>
+              Progress is saved automatically to your browser's LocalStorage. You can also export or
+              import save JSON strings below to share between devices.
+            </p>
+            <div class="save-actions">
+              <button type="button" class="btn-secondary" (click)="handleExportSave()">
+                📋 Export Save JSON
+              </button>
+              <button type="button" class="btn-danger" (click)="handleResetSlot()">
+                🗑️ Reset Current Slot
+              </button>
+            </div>
+            @if (saveJsonText()) {
+              <textarea
+                class="save-textarea"
+                rows="5"
+                [value]="saveJsonText()"
+                (input)="onSaveJsonInput($event)"
+                aria-label="Save Data JSON"
+              ></textarea>
+              <button type="button" class="btn-primary" (click)="handleImportSave()">
+                ⬆️ Import Save from Box Above
+              </button>
+            }
+            @if (saveStatusMsg()) {
+              <p class="save-feedback">{{ saveStatusMsg() }}</p>
+            }
+          </div>
+
+          <div class="save-card">
+            <h3>🎨 Custom SVG Asset Swap Guide</h3>
+            <p>
+              All character and backdrop sprites are standalone SVG files in
+              <code>public/assets/svg/</code> with a <code>0 0 120 120</code> viewBox:
+            </p>
+            <ul class="asset-list">
+              <li>
+                <strong>Heroes:</strong>
+                <code>public/assets/svg/heroes/knight.svg</code>, <code>cleric.svg</code>,
+                <code>rogue.svg</code>, <code>wizard.svg</code>, <code>paladin.svg</code>,
+                <code>bard.svg</code>, <code>ranger.svg</code>, <code>monk.svg</code>
+              </li>
+              <li>
+                <strong>Monsters &amp; Bosses:</strong>
+                <code>public/assets/svg/enemies/goblin-scout.svg</code>,
+                <code>cave-troll.svg</code>, <code>gorgon-queen.svg</code>,
+                <code>dragon-whelp.svg</code>, etc.
+              </li>
+              <li>
+                <strong>Backdrops:</strong>
+                <code>public/assets/svg/backdrops/meadow.svg</code>, <code>forest.svg</code>,
+                <code>crypt.svg</code>, <code>throne.svg</code>
+              </li>
+            </ul>
+            <a routerLink="/status" class="btn-secondary" id="view-status-btn">
+              🔍 Open PWA Runtime &amp; Routing Diagnostics
+            </a>
+          </div>
+        </div>
+      </section>
+    }
+  }
+
+  <!-- ===================================================================== -->
+  <!-- REAL-TIME BATTLEFIELD ARENA                                           -->
+  <!-- ===================================================================== -->
+  @if (combat.isRunning() && combat.activeStage(); as stage) {
+    <section class="battle-screen" aria-label="Battlefield Arena">
+      <!-- Top Battle HUD Bar -->
+      <div class="battle-hud-top">
+        <div class="stage-info-pill">
+          <strong>{{ stage.name }}</strong>
+          <span class="wave-badge">
+            @if (stage.isArena) {
+              Wave {{ combat.waveIndex() + 1 }} • Kills: {{ combat.arenaKills() }}
+            } @else {
+              Wave {{ combat.waveIndex() + 1 }} / {{ combat.totalWaves() }}
+            }
+          </span>
+        </div>
+
+        <div class="controls-hint">
+          @if (gamepad.connected()) {
+            <span>🎮 LB/RB: Hero • Stick+A: Command • X/Y: Skills</span>
+          } @else {
+            <span>🖱️ Drag from Hero to Enemy, Ally, or Ground • Keys 1-4 &amp; Q/W</span>
+          }
+        </div>
+
+        <div class="battle-top-actions">
+          <button type="button" class="hud-btn" (click)="combat.togglePause()">
+            {{ combat.isPaused() ? '▶️ Resume' : '⏸️ Pause' }}
+          </button>
+          <button type="button" class="hud-btn hud-btn-retreat" (click)="combat.stopBattle()">
+            🏳️ Retreat
+          </button>
+        </div>
+      </div>
+
+      <!-- Interactive 2D Side-Perspective Arena -->
+      <div
+        #arenaRef
+        id="battlefield-arena"
+        class="arena-viewport"
+        (pointerdown)="onArenaPointerDown($event)"
+        (pointermove)="onArenaPointerMove($event)"
+        (pointerup)="onArenaPointerUp($event)"
+        (pointercancel)="onArenaPointerUp($event)"
+      >
+        <!-- Stage Backdrop SVG -->
+        <img
+          class="arena-backdrop"
+          [src]="'assets/svg/backdrops/' + stage.backdrop + '.svg'"
+          [alt]="stage.name"
+          draggable="false"
+        />
+
+        <!-- SVG Tactical Vector Overlay (Persistent Target Lines + Active Drag Line + AoE Rings) -->
+        <svg
+          class="tactical-svg-layer"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <!-- AoE Ring Effects -->
+          @for (ring of combat.ringEffects(); track ring.id) {
+            <ellipse
+              [attr.cx]="ring.x"
+              [attr.cy]="ring.y"
+              [attr.rx]="ring.radius"
+              [attr.ry]="ring.radius * 0.55"
+              fill="none"
+              [attr.stroke]="ring.color"
+              stroke-width="0.9"
+              [attr.opacity]="ring.life / ring.maxLife"
+            />
+          }
+
+          <!-- Persistent Command Lines for Heroes -->
+          @for (hero of combat.heroes(); track hero.uid) {
+            @if (getHeroCommandTargetPos(hero); as targetPos) {
+              <line
+                [attr.x1]="hero.x"
+                [attr.y1]="hero.y"
+                [attr.x2]="targetPos.x"
+                [attr.y2]="targetPos.y"
+                [attr.stroke]="targetPos.color"
+                stroke-width="0.6"
+                stroke-dasharray="1.8 1.4"
+                opacity="0.72"
+              />
+              <ellipse
+                [attr.cx]="targetPos.x"
+                [attr.cy]="targetPos.y"
+                rx="3.2"
+                ry="1.8"
+                fill="none"
+                [attr.stroke]="targetPos.color"
+                stroke-width="0.55"
+                opacity="0.8"
+              />
+            }
+          }
+
+          <!-- Live Dragging Path Line -->
+          @if (draggingFromHero(); as dragHero) {
+            <line
+              [attr.x1]="dragHero.x"
+              [attr.y1]="dragHero.y"
+              [attr.x2]="dragCurrentX()"
+              [attr.y2]="dragCurrentY()"
+              [attr.stroke]="dragLineColor()"
+              stroke-width="1.15"
+              stroke-linecap="round"
+            />
+            <ellipse
+              [attr.cx]="dragCurrentX()"
+              [attr.cy]="dragCurrentY()"
+              rx="4.4"
+              ry="2.5"
+              fill="rgba(255, 255, 255, 0.15)"
+              [attr.stroke]="dragLineColor()"
+              stroke-width="0.8"
+            />
+          }
+
+          <!-- Projectiles -->
+          @for (proj of combat.projectiles(); track proj.id) {
+            <circle
+              [attr.cx]="proj.x"
+              [attr.cy]="proj.y"
+              [attr.r]="proj.isHeal ? 1.4 : 1.2"
+              [attr.fill]="proj.color"
+              stroke="#0f172a"
+              stroke-width="0.3"
+            />
+          }
+        </svg>
+
+        <!-- Gamepad Reticle (visible when using controller or keyboard) -->
+        @if (gamepad.activeMode() === 'gamepad') {
+          <div
+            class="gamepad-reticle"
+            [style.left.%]="gamepad.reticleX()"
+            [style.top.%]="gamepad.reticleY()"
+          >
+            🎯
+          </div>
+        }
+
+        <!-- Combat Units (Heroes & Monsters sorted by Y depth via style.zIndex) -->
+        @for (unit of combat.units(); track unit.uid) {
+          <div
+            class="arena-unit"
+            [class.is-hero]="unit.isHero"
+            [class.is-enemy]="!unit.isHero"
+            [class.is-boss]="unit.isBoss"
+            [class.is-selected]="combat.selectedHeroUid() === unit.uid"
+            [class.is-hovered-target]="hoveredTargetUid() === unit.uid"
+            [class.is-attacking]="unit.attackAnimTimer > 0"
+            [class.is-hurt]="unit.hurtAnimTimer > 0"
+            [class.is-stunned]="unit.stunTimer > 0"
+            [class.is-shielded]="unit.shieldTimer > 0"
+            [style.left.%]="unit.x"
+            [style.top.%]="unit.y"
+            [style.zIndex]="Math.round(unit.y)"
+            [attr.data-unit-uid]="unit.uid"
+          >
+            <!-- Selection Plinth Ring -->
+            <div
+              class="unit-plinth"
+              [style.borderColor]="unit.isHero ? unit.accentColor : '#ef4444'"
+            ></div>
+
+            <!-- Overhead HP Bar & Status Badges -->
+            <div class="unit-overhead">
+              <div class="status-icons">
+                @if (unit.shieldTimer > 0) {
+                  <span>🛡️</span>
+                }
+                @if (unit.stunTimer > 0) {
+                  <span>💫</span>
+                }
+                @if (unit.attackBuffTimer > 0 || unit.hasteTimer > 0) {
+                  <span>⚡</span>
+                }
+                @if (unit.poisonTimer > 0) {
+                  <span>🧪</span>
+                }
+              </div>
+              <div class="hp-track">
+                <div
+                  class="hp-fill"
+                  [class.enemy-hp]="!unit.isHero"
+                  [style.width.%]="(unit.hp / unit.maxHp) * 100"
+                ></div>
+              </div>
+              <span class="unit-name-tag">{{ unit.name }}</span>
+            </div>
+
+            <!-- Character SVG Sprite -->
+            <img
+              class="unit-sprite"
+              [class.flip-x]="
+                (unit.isHero && unit.facing === 'left') || (!unit.isHero && unit.facing === 'right')
+              "
+              [style.transform]="
+                'scale(' +
+                unit.scale *
+                  ((unit.isHero && unit.facing === 'left') ||
+                  (!unit.isHero && unit.facing === 'right')
+                    ? -1
+                    : 1) +
+                ', ' +
+                unit.scale +
+                ')'
+              "
+              [src]="unit.svgAsset"
+              [alt]="unit.name"
+              draggable="false"
+            />
+          </div>
+        }
+
+        <!-- Floating Damage & Heal Numbers -->
+        @for (ft of combat.floatingTexts(); track ft.id) {
+          <div
+            class="floating-text"
+            [class.is-crit]="ft.isCrit"
+            [style.left.%]="ft.x"
+            [style.top.%]="ft.y"
+            [style.color]="ft.color"
+          >
+            {{ ft.text }}
+          </div>
+        }
+
+        <!-- Victory / Defeat Overlay Modal -->
+        @if (combat.outcome() !== 'ongoing') {
+          <div class="outcome-overlay" role="dialog" aria-modal="true">
+            <div class="outcome-card">
+              <h2>
+                {{ combat.outcome() === 'victory' ? '🏆 Victory!' : '💀 Party Fallen' }}
+              </h2>
+              @if (combat.lastRewardSummary(); as reward) {
+                @if (reward.stars > 0) {
+                  <div class="stars-display">{{ '⭐'.repeat(reward.stars) }}</div>
+                }
+                <p class="reward-line">
+                  Earned <strong>🪙 +{{ reward.gold }} Gold</strong> &amp;
+                  <strong>✨ +{{ reward.xp }} XP</strong>
+                </p>
+                @if (reward.leveledUpHeroes.length > 0) {
+                  <div class="levelup-banner">
+                    🎉 Level Up: {{ reward.leveledUpHeroes.join(', ') }}!
+                  </div>
+                }
+              }
+              <div class="outcome-actions">
+                <button type="button" class="btn-primary" (click)="launchStage(stage)">
+                  🔄 Replay Stage
+                </button>
+                <button type="button" class="btn-secondary" (click)="combat.stopBattle()">
+                  🗺️ Return to Realm
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Bottom Tactical Skill Bar & Hero Dock -->
+      <div class="battle-hud-bottom" aria-label="Party Command Dock">
+        <div class="hero-dock-list">
+          @for (hero of combat.heroes(); track hero.uid; let idx = $index) {
+            <div
+              class="dock-hero-card"
+              role="button"
+              tabindex="0"
+              [class.selected]="combat.selectedHeroUid() === hero.uid"
+              (click)="combat.selectHero(hero.uid)"
+              (keydown.enter)="combat.selectHero(hero.uid)"
+              (keydown.space)="combat.selectHero(hero.uid)"
+            >
+              <div class="dock-portrait-wrap" [style.borderColor]="hero.accentColor">
+                <img [src]="hero.svgAsset" [alt]="hero.name" />
+                <span class="hotkey-badge">{{ idx + 1 }}</span>
+              </div>
+              <div class="dock-info">
+                <div class="dock-name-row">
+                  <strong>{{ hero.name }}</strong>
+                  <span>{{ hero.hp }}/{{ hero.maxHp }}</span>
+                </div>
+                <div class="dock-hp-bar">
+                  <div class="dock-hp-fill" [style.width.%]="(hero.hp / hero.maxHp) * 100"></div>
+                </div>
+                <div class="dock-skills-row">
+                  @for (sk of hero.skills; track sk.def.id; let sIdx = $index) {
+                    <button
+                      type="button"
+                      class="skill-btn"
+                      [disabled]="sk.cooldownRemaining > 0"
+                      (click)="$event.stopPropagation(); triggerSkill(hero.uid, sIdx)"
+                      [title]="sk.def.name + ': ' + sk.def.description"
+                    >
+                      <span class="sk-emoji">{{ sk.def.icon }}</span>
+                      <span class="sk-label">{{
+                        sk.cooldownRemaining > 0
+                          ? sk.cooldownRemaining.toFixed(1) + 's'
+                          : sk.def.name
+                      }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+  }
+</div>

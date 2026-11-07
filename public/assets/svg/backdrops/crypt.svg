@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="cwall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#090d16"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="cfloor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="285" fill="url(#cwall)"/>
+  <!-- Stone Archways -->
+  <g fill="#0f172a" stroke="#475569" stroke-width="6">
+    <path d="M120 285 L120 140 A70 70 0 0 1 260 140 L260 285 Z"/>
+    <path d="M530 285 L530 140 A70 70 0 0 1 670 140 L670 285 Z"/>
+    <path d="M940 285 L940 140 A70 70 0 0 1 1080 140 L1080 285 Z"/>
+  </g>
+  <!-- Torch Sconces -->
+  <circle cx="395" cy="175" r="18" fill="#f97316" opacity="0.7"/>
+  <circle cx="805" cy="175" r="18" fill="#f97316" opacity="0.7"/>
+  <!-- Flagstone Floor -->
+  <rect y="275" width="1200" height="425" fill="url(#cfloor)"/>
+  <ellipse cx="600" cy="485" rx="510" ry="170" fill="#1e1b4b" opacity="0.45" stroke="#6366f1" stroke-width="3" stroke-dasharray="16 12"/>
+</svg>
+

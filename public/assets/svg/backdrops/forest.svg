@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="fsky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </linearGradient>
+    <linearGradient id="fground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#14532d"/>
+      <stop offset="100%" stop-color="#052e16"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="310" fill="url(#fsky)"/>
+  <!-- Moon -->
+  <circle cx="980" cy="110" r="46" fill="#fef9c3" opacity="0.85"/>
+  <!-- Silhouetted Pine Trees -->
+  <g fill="#064e3b">
+    <polygon points="80,290 140,110 200,290"/>
+    <polygon points="180,290 250,95 320,290"/>
+    <polygon points="860,290 930,105 1000,290"/>
+    <polygon points="990,290 1070,90 1150,290"/>
+  </g>
+  <rect y="275" width="1200" height="425" fill="url(#fground)"/>
+  <ellipse cx="600" cy="485" rx="520" ry="175" fill="#1e293b" opacity="0.5"/>
+  <!-- Glowing Mushrooms -->
+  <circle cx="140" cy="360" r="8" fill="#38bdf8" opacity="0.8"/>
+  <circle cx="1060" cy="380" r="9" fill="#c084fc" opacity="0.8"/>
+</svg>
+

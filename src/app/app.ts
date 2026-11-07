@@ -1,5 +1,5 @@
-import { Component, signal, OnInit, OnDestroy } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -14,7 +14,7 @@ interface BeforeInstallPromptEvent extends Event {
   styleUrl: './app.scss',
 })
 export class App implements OnInit, OnDestroy {
-  protected readonly title = signal('Angular PWA Starter');
+  protected readonly title = signal('Battleheart');
   protected readonly isOnline = signal(typeof navigator !== 'undefined' ? navigator.onLine : true);
   protected readonly canInstall = signal(false);
 

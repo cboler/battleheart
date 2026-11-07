@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="rangercloak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#15803d"/>
+      <stop offset="100%" stop-color="#14532d"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="60" cy="108" rx="32" ry="8" fill="rgba(0,0,0,0.45)"/>
+  <!-- Quiver on Back -->
+  <g transform="translate(36, 48) rotate(-20)">
+    <rect x="-6" y="0" width="12" height="28" rx="3" fill="#78350f" stroke="#0f172a" stroke-width="2.5"/>
+    <path d="M-4 -8 L-4 0 M2 -10 L2 0" stroke="#fef08a" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <!-- Legs -->
+  <rect x="45" y="84" width="11" height="20" rx="5" fill="#451a03" stroke="#0f172a" stroke-width="3"/>
+  <rect x="64" y="84" width="11" height="20" rx="5" fill="#451a03" stroke="#0f172a" stroke-width="3"/>
+  <!-- Woodland Tunic -->
+  <rect x="40" y="54" width="40" height="34" rx="9" fill="url(#rangercloak)" stroke="#0f172a" stroke-width="3.5"/>
+  <path d="M38 56 Q60 68 82 56 L78 48 L42 48 Z" fill="#166534" stroke="#0f172a" stroke-width="3"/>
+  <!-- Head & Hood -->
+  <circle cx="60" cy="39" r="20" fill="#fde68a" stroke="#0f172a" stroke-width="3.5"/>
+  <path d="M36 42 C34 12 86 12 84 42 C78 24 60 22 60 22 C60 22 42 24 36 42 Z" fill="url(#rangercloak)" stroke="#0f172a" stroke-width="3.5"/>
+  <circle cx="53" cy="40" r="3" fill="#0f172a"/>
+  <circle cx="67" cy="40" r="3" fill="#0f172a"/>
+  <!-- Recurve Longbow -->
+  <g transform="translate(88, 64)">
+    <path d="M-6 -36 Q18 0 -6 36" fill="none" stroke="#92400e" stroke-width="5" stroke-linecap="round"/>
+    <line x1="-6" y1="-34" x2="-6" y2="34" stroke="#e2e8f0" stroke-width="2"/>
+    <line x1="-14" y1="0" x2="14" y2="0" stroke="#fde047" stroke-width="3"/>
+    <polygon points="18,0 10,-5 10,5" fill="#38bdf8" stroke="#0f172a" stroke-width="1.5"/>
+  </g>
+</svg>
+

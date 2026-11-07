@@ -1,316 +1,319 @@
-import { Component, signal, OnInit, OnDestroy } from '@angular/core';
+import {
+  Component,
+  computed,
+  ElementRef,
+  HostListener,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  ViewChild,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { ARMOR_TIERS, TRINKET_CATALOG, WEAPON_TIERS } from '../core/models/game-catalog';
+import { CombatUnit, EquipmentTier, HeroClassId, StageDefinition } from '../core/models/game.model';
+import { AudioService } from '../core/services/audio.service';
+import { CombatService } from '../core/services/combat.service';
+import { GameStateService } from '../core/services/game-state.service';
+import { GamepadService } from '../core/services/gamepad.service';
+
+export type HubTab = 'map' | 'tavern' | 'armory' | 'academy' | 'saves';
 
 @Component({
   selector: 'app-home',
   standalone: true,
   imports: [RouterLink],
-  template: `
-    <section class="hero-section" aria-labelledby="starter-title">
-      <div class="badge-pill">
-        <span class="status-indicator"></span>
-        Production-Ready Starter
-      </div>
-      <h1 id="starter-title" class="hero-title">Angular PWA Starter</h1>
-      <p class="hero-subtitle">
-        A clean, mobile-first Angular foundation with service-worker offline caching, standalone
-        architecture, and automated GitHub Pages deployment.
-      </p>
-
-      <div class="actions-group">
-        <a routerLink="/status" class="button button-primary" id="view-status-btn">
-          Verify Runtime Status & SPA Deep-Link
-        </a>
-        <a
-          href="https://github.com/cboler/angular-pwa-starter"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="button button-secondary"
-          id="github-repo-link"
-        >
-          View on GitHub
-        </a>
-      </div>
-    </section>
-
-    <section class="features-grid" aria-label="Starter Capabilities">
-      <article class="feature-card">
-        <div class="card-icon" aria-hidden="true">⚡</div>
-        <h2>Modern Angular Baseline</h2>
-        <p>
-          Built on current stable standalone components, strict TypeScript, SCSS, Vitest unit
-          testing, and ESLint.
-        </p>
-        <div class="tech-tag">Angular 22 • Standalone • Vitest</div>
-      </article>
-
-      <article class="feature-card">
-        <div class="card-icon" aria-hidden="true">📱</div>
-        <h2>Mobile-First Responsive</h2>
-        <p>
-          Pre-configured safe areas, accessible 44px minimum tap targets, no accidental horizontal
-          overflow, and reduced-motion preferences.
-        </p>
-        <div class="tech-tag">Phone • Tablet • Desktop</div>
-      </article>
-
-      <article class="feature-card">
-        <div class="card-icon" aria-hidden="true">📦</div>
-        <h2>Installable PWA & Offline</h2>
-        <p>
-          Web app manifest with standalone display mode and production service-worker caching for
-          reliable offline shell startup.
-        </p>
-        <div class="tech-tag">Manifest • NGSW • Offline Shell</div>
-      </article>
-
-      <article class="feature-card">
-        <div class="card-icon" aria-hidden="true">🚀</div>
-        <h2>GitHub Pages Ready</h2>
-        <p>
-          Repository-name agnostic base path configuration, automated GitHub Actions workflow, and
-          404 client-side SPA routing fallback.
-        </p>
-        <div class="tech-tag">GitHub Actions • Dynamic Base Path • 404 Fallback</div>
-      </article>
-    </section>
-
-    <section class="specs-panel" aria-labelledby="quick-check-heading">
-      <h2 id="quick-check-heading" class="specs-title">Starter Diagnostics</h2>
-      <div class="specs-row">
-        <span class="spec-label">Network Status:</span>
-        <span
-          class="spec-value"
-          [class.status-online]="isOnline()"
-          [class.status-offline]="!isOnline()"
-        >
-          {{ isOnline() ? 'Online' : 'Offline' }}
-        </span>
-      </div>
-      <div class="specs-row">
-        <span class="spec-label">Active Viewport Profile:</span>
-        <span class="spec-value" id="viewport-indicator">{{ currentViewport() }}</span>
-      </div>
-      <div class="specs-row">
-        <span class="spec-label">Template Status:</span>
-        <span class="spec-value status-ready">Ready for "Use this template"</span>
-      </div>
-    </section>
-  `,
-  styles: [
-    `
-      :host {
-        display: block;
-        width: 100%;
-      }
-
-      .hero-section {
-        text-align: center;
-        padding: var(--space-8) var(--space-4);
-        max-width: 720px;
-        margin: 0 auto;
-      }
-
-      .badge-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-1) var(--space-3);
-        background-color: var(--bg-surface-elevated);
-        border: 1px solid var(--border-subtle);
-        border-radius: var(--radius-full);
-        font-size: var(--font-size-xs);
-        color: var(--text-secondary);
-        font-weight: 500;
-        margin-bottom: var(--space-4);
-      }
-
-      .status-indicator {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background-color: var(--color-success);
-      }
-
-      .hero-title {
-        font-size: clamp(1.75rem, 5vw, 2.5rem);
-        font-weight: 700;
-        letter-spacing: -0.025em;
-        margin-bottom: var(--space-3);
-      }
-
-      .hero-subtitle {
-        font-size: clamp(1rem, 2.5vw, 1.125rem);
-        line-height: 1.6;
-        color: var(--text-secondary);
-        margin-bottom: var(--space-6);
-      }
-
-      .actions-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-3);
-        justify-content: center;
-        margin-bottom: var(--space-4);
-      }
-
-      .button-primary {
-        background-color: var(--color-primary);
-        color: var(--text-inverse);
-        font-weight: 600;
-        transition: background-color 0.15s ease;
-        &:hover {
-          background-color: var(--color-primary-hover);
-          text-decoration: none;
-        }
-      }
-
-      .button-secondary {
-        background-color: var(--bg-surface-elevated);
-        color: var(--text-primary);
-        border: 1px solid var(--border-muted);
-        transition: background-color 0.15s ease;
-        &:hover {
-          background-color: var(--bg-surface-hover);
-          text-decoration: none;
-        }
-      }
-
-      .features-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: var(--space-4);
-        margin: var(--space-6) 0;
-
-        @media (min-width: 640px) {
-          grid-template-columns: repeat(2, 1fr);
-        }
-      }
-
-      .feature-card {
-        background-color: var(--bg-surface);
-        border: 1px solid var(--border-subtle);
-        border-radius: var(--radius-lg);
-        padding: var(--space-6);
-        display: flex;
-        flex-direction: column;
-
-        h2 {
-          font-size: var(--font-size-lg);
-          margin: var(--space-2) 0 var(--space-2) 0;
-        }
-
-        p {
-          font-size: var(--font-size-sm);
-          margin-bottom: var(--space-4);
-          flex-grow: 1;
-        }
-      }
-
-      .card-icon {
-        font-size: 1.75rem;
-        margin-bottom: var(--space-2);
-      }
-
-      .tech-tag {
-        font-family: var(--font-mono);
-        font-size: var(--font-size-xs);
-        color: var(--color-primary);
-        background-color: rgba(56, 189, 248, 0.08);
-        padding: var(--space-1) var(--space-2);
-        border-radius: var(--radius-sm);
-        align-self: flex-start;
-      }
-
-      .specs-panel {
-        background-color: var(--bg-surface);
-        border: 1px solid var(--border-subtle);
-        border-radius: var(--radius-lg);
-        padding: var(--space-4) var(--space-6);
-        margin-top: var(--space-6);
-      }
-
-      .specs-title {
-        font-size: var(--font-size-base);
-        margin-bottom: var(--space-3);
-        color: var(--text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-
-      .specs-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: var(--space-2) 0;
-        border-bottom: 1px solid var(--border-subtle);
-        font-size: var(--font-size-sm);
-
-        &:last-child {
-          border-bottom: none;
-        }
-      }
-
-      .spec-label {
-        color: var(--text-secondary);
-      }
-
-      .spec-value {
-        font-family: var(--font-mono);
-        color: var(--text-primary);
-      }
-
-      .status-online {
-        color: var(--color-success);
-      }
-
-      .status-offline {
-        color: var(--color-error);
-      }
-
-      .status-ready {
-        color: var(--color-primary);
-      }
-    `,
-  ],
+  templateUrl: './home.component.html',
+  styleUrl: './home.component.scss',
 })
 export class HomeComponent implements OnInit, OnDestroy {
-  protected readonly isOnline = signal(typeof navigator !== 'undefined' ? navigator.onLine : true);
-  protected readonly currentViewport = signal('Evaluating...');
+  protected readonly gameState = inject(GameStateService);
+  protected readonly combat = inject(CombatService);
+  protected readonly audio = inject(AudioService);
+  protected readonly gamepad = inject(GamepadService);
 
-  private resizeListener?: () => void;
-  private onlineListener?: () => void;
-  private offlineListener?: () => void;
+  @ViewChild('arenaRef') private arenaRef?: ElementRef<HTMLElement>;
+
+  protected readonly activeTab = signal<HubTab>('map');
+  protected readonly inspectedHeroId = signal<HeroClassId>('knight');
+
+  protected readonly inspectedHero = computed(
+    () =>
+      this.gameState.roster().find((h) => h.def.id === this.inspectedHeroId()) ??
+      this.gameState.roster()[0],
+  );
+
+  protected readonly trinkets = TRINKET_CATALOG;
+  protected readonly Math = Math;
+
+  // Save import/export UI state
+  protected readonly saveJsonText = signal('');
+  protected readonly saveStatusMsg = signal('');
+
+  // Battlefield Line-Drawing Drag State
+  protected readonly draggingFromHeroUid = signal<string | null>(null);
+  protected readonly dragCurrentX = signal(50);
+  protected readonly dragCurrentY = signal(50);
+  protected readonly hoveredTargetUid = signal<string | null>(null);
+
+  protected readonly draggingFromHero = computed(() =>
+    this.combat.units().find((u) => u.uid === this.draggingFromHeroUid() && u.isHero),
+  );
+
+  protected readonly dragLineColor = computed(() => {
+    const hero = this.draggingFromHero();
+    const target = this.combat.units().find((u) => u.uid === this.hoveredTargetUid());
+    if (target) {
+      return target.isHero ? '#34d399' : '#ef4444';
+    }
+    return hero?.accentColor ?? '#38bdf8';
+  });
+
+  private gamepadSub?: Subscription;
 
   ngOnInit(): void {
-    if (typeof window !== 'undefined') {
-      this.updateViewport();
-      this.resizeListener = () => this.updateViewport();
-      window.addEventListener('resize', this.resizeListener);
-
-      this.onlineListener = () => this.isOnline.set(true);
-      this.offlineListener = () => this.isOnline.set(false);
-      window.addEventListener('online', this.onlineListener);
-      window.addEventListener('offline', this.offlineListener);
-    }
+    this.gamepad.start();
+    this.gamepadSub = this.gamepad.commands$.subscribe((cmd) => {
+      if (!this.combat.isRunning()) return;
+      switch (cmd.type) {
+        case 'prev-hero':
+          this.combat.cycleSelectedHero(-1);
+          break;
+        case 'next-hero':
+          this.combat.cycleSelectedHero(1);
+          break;
+        case 'skill': {
+          const sel = this.combat.selectedHeroUid();
+          if (sel) {
+            this.combat.activateHeroSkill(sel, cmd.index);
+          }
+          break;
+        }
+        case 'confirm-reticle': {
+          const sel = this.combat.selectedHeroUid();
+          if (!sel) break;
+          const rx = this.gamepad.reticleX();
+          const ry = this.gamepad.reticleY();
+          const hitUnit = this.findNearestUnitAt(rx, ry, 9);
+          this.combat.issueCommand(sel, hitUnit?.uid ?? null, { x: rx, y: ry });
+          break;
+        }
+        case 'pause':
+          this.combat.togglePause();
+          break;
+      }
+    });
   }
 
   ngOnDestroy(): void {
-    if (typeof window !== 'undefined') {
-      if (this.resizeListener) window.removeEventListener('resize', this.resizeListener);
-      if (this.onlineListener) window.removeEventListener('online', this.onlineListener);
-      if (this.offlineListener) window.removeEventListener('offline', this.offlineListener);
+    this.gamepadSub?.unsubscribe();
+    this.combat.stopBattle();
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  protected onWindowKeyDown(e: KeyboardEvent): void {
+    if (!this.combat.isRunning()) return;
+    const heroes = this.combat.heroes();
+    if (e.key === '1' && heroes[0]) this.combat.selectHero(heroes[0].uid);
+    if (e.key === '2' && heroes[1]) this.combat.selectHero(heroes[1].uid);
+    if (e.key === '3' && heroes[2]) this.combat.selectHero(heroes[2].uid);
+    if (e.key === '4' && heroes[3]) this.combat.selectHero(heroes[3].uid);
+  }
+
+  protected setTab(tab: HubTab): void {
+    this.activeTab.set(tab);
+    this.audio.playSelect();
+  }
+
+  protected switchSlot(slot: number): void {
+    if (slot === 1 || slot === 2 || slot === 3) {
+      this.gameState.switchSaveSlot(slot);
+      this.saveStatusMsg.set(`Switched to Save Slot #${slot}.`);
     }
   }
 
-  private updateViewport(): void {
-    const width = window.innerWidth;
-    if (width < 640) {
-      this.currentViewport.set(`Phone (${width}px)`);
-    } else if (width < 1024) {
-      this.currentViewport.set(`Tablet (${width}px)`);
-    } else {
-      this.currentViewport.set(`Desktop (${width}px)`);
+  protected inspectHero(id: HeroClassId): void {
+    this.inspectedHeroId.set(id);
+    this.audio.playSelect();
+  }
+
+  protected inspectHeroAndOpenArmory(id: HeroClassId): void {
+    this.inspectedHeroId.set(id);
+    this.activeTab.set('armory');
+    this.audio.playSelect();
+  }
+
+  protected nextWeaponTier(currentTier: number): EquipmentTier | null {
+    return WEAPON_TIERS[currentTier] ?? null;
+  }
+
+  protected nextArmorTier(currentTier: number): EquipmentTier | null {
+    return ARMOR_TIERS[currentTier] ?? null;
+  }
+
+  protected launchStage(stage: StageDefinition): void {
+    this.audio.playSelect();
+    this.combat.startBattle(stage);
+  }
+
+  protected triggerSkill(heroUid: string, skillIndex: number): void {
+    this.combat.activateHeroSkill(heroUid, skillIndex);
+  }
+
+  // --- Line-Drawing Pointer Handlers ---
+
+  protected onArenaPointerDown(event: PointerEvent): void {
+    if (this.combat.outcome() !== 'ongoing') return;
+    const pt = this.pointerToArenaCoords(event);
+    if (!pt) return;
+
+    // Check if pointer started on or near a Hero
+    const clickedHero = this.findNearestHeroAt(pt.x, pt.y, 11);
+    if (clickedHero) {
+      this.combat.selectHero(clickedHero.uid);
+      this.draggingFromHeroUid.set(clickedHero.uid);
+      this.dragCurrentX.set(pt.x);
+      this.dragCurrentY.set(pt.y);
+      this.hoveredTargetUid.set(null);
+      return;
     }
+
+    // Otherwise if a hero is already selected, clicking an enemy or ground issues a quick command
+    const selectedUid = this.combat.selectedHeroUid();
+    if (selectedUid) {
+      const targetUnit = this.findNearestUnitAt(pt.x, pt.y, 10);
+      this.combat.issueCommand(selectedUid, targetUnit?.uid ?? null, pt);
+    }
+  }
+
+  protected onArenaPointerMove(event: PointerEvent): void {
+    const fromUid = this.draggingFromHeroUid();
+    if (!fromUid) return;
+
+    const pt = this.pointerToArenaCoords(event);
+    if (!pt) return;
+
+    this.dragCurrentX.set(pt.x);
+    this.dragCurrentY.set(pt.y);
+
+    const candidate = this.findNearestUnitAt(pt.x, pt.y, 10, fromUid);
+    this.hoveredTargetUid.set(candidate?.uid ?? null);
+  }
+
+  protected onArenaPointerUp(event: PointerEvent): void {
+    const fromUid = this.draggingFromHeroUid();
+    if (!fromUid) return;
+
+    const pt = this.pointerToArenaCoords(event) ?? {
+      x: this.dragCurrentX(),
+      y: this.dragCurrentY(),
+    };
+
+    const targetUnit = this.findNearestUnitAt(pt.x, pt.y, 10.5, fromUid);
+    const dragHero = this.draggingFromHero();
+
+    // Only issue a movement/target command if the user dragged at least a small distance or onto another unit
+    if (targetUnit || (dragHero && Math.hypot(pt.x - dragHero.x, pt.y - dragHero.y) > 4)) {
+      this.combat.issueCommand(fromUid, targetUnit?.uid ?? null, pt);
+    }
+
+    this.draggingFromHeroUid.set(null);
+    this.hoveredTargetUid.set(null);
+  }
+
+  protected getHeroCommandTargetPos(
+    hero: CombatUnit,
+  ): { x: number; y: number; color: string } | null {
+    if (hero.moveDestination) {
+      return {
+        x: hero.moveDestination.x,
+        y: hero.moveDestination.y,
+        color: hero.accentColor,
+      };
+    }
+    if (hero.targetUnitUid) {
+      const target = this.combat.units().find((u) => u.uid === hero.targetUnitUid);
+      if (target) {
+        return {
+          x: target.x,
+          y: target.y,
+          color: target.isHero ? '#34d399' : '#ef4444',
+        };
+      }
+    }
+    return null;
+  }
+
+  // --- Save Export / Import Handlers ---
+
+  protected handleExportSave(): void {
+    const json = this.gameState.exportSave();
+    this.saveJsonText.set(json);
+    this.saveStatusMsg.set('Save exported! Copy the JSON above to back it up.');
+  }
+
+  protected onSaveJsonInput(event: Event): void {
+    const target = event.target as HTMLTextAreaElement;
+    this.saveJsonText.set(target.value);
+  }
+
+  protected handleImportSave(): void {
+    const ok = this.gameState.importSave(this.saveJsonText());
+    this.saveStatusMsg.set(
+      ok ? 'Save imported successfully!' : 'Invalid save JSON format. Please check and try again.',
+    );
+  }
+
+  protected handleResetSlot(): void {
+    this.gameState.resetCurrentSlot();
+    this.saveJsonText.set('');
+    this.saveStatusMsg.set(`Save Slot #${this.gameState.activeSlot()} reset to fresh warband.`);
+  }
+
+  private pointerToArenaCoords(event: PointerEvent): { x: number; y: number } | null {
+    const el = this.arenaRef?.nativeElement;
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    return {
+      x: Math.max(5, Math.min(95, x)),
+      y: Math.max(30, Math.min(92, y)),
+    };
+  }
+
+  private findNearestHeroAt(x: number, y: number, maxRadius: number): CombatUnit | null {
+    let best: CombatUnit | null = null;
+    let bestDist = maxRadius;
+    for (const h of this.combat.heroes()) {
+      // Visual sprite sits slightly above anchor y
+      const d = Math.hypot(h.x - x, h.y - 4 - y);
+      if (d <= bestDist) {
+        bestDist = d;
+        best = h;
+      }
+    }
+    return best;
+  }
+
+  private findNearestUnitAt(
+    x: number,
+    y: number,
+    maxRadius: number,
+    excludeUid?: string,
+  ): CombatUnit | null {
+    let best: CombatUnit | null = null;
+    let bestDist = maxRadius;
+    for (const u of this.combat.units()) {
+      if (u.uid === excludeUid) continue;
+      const d = Math.hypot(u.x - x, u.y - 4 - y);
+      if (d <= bestDist) {
+        bestDist = d;
+        best = u;
+      }
+    }
+    return best;
   }
 }

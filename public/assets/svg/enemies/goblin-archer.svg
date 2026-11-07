@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <ellipse cx="60" cy="108" rx="28" ry="7" fill="rgba(0,0,0,0.45)"/>
+  <rect x="46" y="86" width="10" height="18" rx="4" fill="#65a30d" stroke="#0f172a" stroke-width="3"/>
+  <rect x="64" y="86" width="10" height="18" rx="4" fill="#65a30d" stroke="#0f172a" stroke-width="3"/>
+  <rect x="42" y="58" width="36" height="30" rx="8" fill="#3f6212" stroke="#0f172a" stroke-width="3.5"/>
+  <polygon points="38,40 16,32 36,52" fill="#84cc16" stroke="#0f172a" stroke-width="3"/>
+  <polygon points="82,40 104,32 84,52" fill="#84cc16" stroke="#0f172a" stroke-width="3"/>
+  <circle cx="60" cy="44" r="20" fill="#84cc16" stroke="#0f172a" stroke-width="3.5"/>
+  <!-- Red Bandana -->
+  <path d="M40 36 Q60 24 80 36 Z" fill="#b91c1c" stroke="#0f172a" stroke-width="3"/>
+  <circle cx="52" cy="43" r="3.5" fill="#fbbf24"/>
+  <circle cx="68" cy="43" r="3.5" fill="#fbbf24"/>
+  <!-- Shortbow -->
+  <g transform="translate(26, 66)">
+    <path d="M4 -26 Q-14 0 4 26" fill="none" stroke="#78350f" stroke-width="4.5" stroke-linecap="round"/>
+    <line x1="4" y1="-24" x2="4" y2="24" stroke="#cbd5e1" stroke-width="1.5"/>
+    <line x1="10" y1="0" x2="-12" y2="0" stroke="#fde047" stroke-width="2.5"/>
+  </g>
+</svg>
+

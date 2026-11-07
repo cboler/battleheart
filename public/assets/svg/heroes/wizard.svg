@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="wizrobe" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7e22ce"/>
+      <stop offset="100%" stop-color="#3b0764"/>
+    </linearGradient>
+    <radialGradient id="fireorb" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="60%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#dc2626"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="60" cy="108" rx="34" ry="8" fill="rgba(0,0,0,0.45)"/>
+  <!-- Robe Body -->
+  <path d="M36 56 L28 102 L92 102 L84 56 Z" fill="url(#wizrobe)" stroke="#0f172a" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M50 56 L46 102 M70 56 L74 102" stroke="#fbbf24" stroke-width="3"/>
+  <!-- Shadowed Face -->
+  <circle cx="60" cy="44" r="18" fill="#1e1b4b" stroke="#0f172a" stroke-width="3"/>
+  <!-- Glowing Arcane Eyes -->
+  <ellipse cx="53" cy="45" rx="3.5" ry="2.5" fill="#fbbf24"/>
+  <ellipse cx="67" cy="45" rx="3.5" ry="2.5" fill="#fbbf24"/>
+  <!-- White Beard -->
+  <path d="M45 52 Q60 86 75 52 Q60 58 45 52 Z" fill="#e2e8f0" stroke="#0f172a" stroke-width="2.5"/>
+  <!-- Pointed Wizard Hat -->
+  <path d="M22 36 Q60 44 98 36 L76 28 L66 4 L44 28 Z" fill="url(#wizrobe)" stroke="#0f172a" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M42 29 Q60 34 78 29" fill="none" stroke="#fbbf24" stroke-width="4"/>
+  <!-- Flame Staff -->
+  <g transform="translate(90, 56)">
+    <path d="M0 46 L0 -26 Q0 -38 -10 -36" fill="none" stroke="#78350f" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="-4" cy="-38" r="11" fill="url(#fireorb)" stroke="#0f172a" stroke-width="2.5"/>
+  </g>
+  <!-- Left Hand Arcane Fire -->
+  <circle cx="28" cy="64" r="10" fill="url(#fireorb)"/>
+</svg>
+

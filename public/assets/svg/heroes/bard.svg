@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="bardtunic" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="60" cy="108" rx="32" ry="8" fill="rgba(0,0,0,0.45)"/>
+  <!-- Half-Cape -->
+  <path d="M38 54 Q20 74 26 96 L52 90 Z" fill="#f59e0b" stroke="#0f172a" stroke-width="3"/>
+  <!-- Legs -->
+  <rect x="46" y="84" width="10" height="20" rx="5" fill="#78350f" stroke="#0f172a" stroke-width="3"/>
+  <rect x="64" y="84" width="10" height="20" rx="5" fill="#78350f" stroke="#0f172a" stroke-width="3"/>
+  <!-- Tunic -->
+  <rect x="40" y="54" width="40" height="34" rx="9" fill="url(#bardtunic)" stroke="#0f172a" stroke-width="3.5"/>
+  <!-- Head -->
+  <circle cx="60" cy="39" r="20" fill="#fde68a" stroke="#0f172a" stroke-width="3.5"/>
+  <!-- Feathered Cap -->
+  <path d="M34 32 Q60 14 88 28 L78 36 Q58 28 34 32 Z" fill="#047857" stroke="#0f172a" stroke-width="3.5"/>
+  <path d="M72 24 Q92 6 102 14 Q88 26 76 28 Z" fill="#ef4444" stroke="#0f172a" stroke-width="2.5"/>
+  <!-- Cheerful Eyes & Smile -->
+  <circle cx="53" cy="40" r="3" fill="#0f172a"/>
+  <circle cx="67" cy="40" r="3" fill="#0f172a"/>
+  <path d="M55 47 Q60 52 65 47" fill="none" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Wooden Lute -->
+  <g transform="translate(62, 72) rotate(-25)">
+    <ellipse cx="-6" cy="4" rx="16" ry="12" fill="#d97706" stroke="#0f172a" stroke-width="3"/>
+    <circle cx="-6" cy="4" r="4.5" fill="#451a03"/>
+    <rect x="8" y="1" width="24" height="6" rx="2" fill="#78350f" stroke="#0f172a" stroke-width="2.5"/>
+    <line x1="-14" y1="4" x2="28" y2="4" stroke="#fef08a" stroke-width="1.5"/>
+  </g>
+  <!-- Floating Musical Note -->
+  <path d="M92 38 L92 22 L104 20 L104 34" fill="none" stroke="#fbbf24" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="89" cy="38" r="4" fill="#fbbf24"/>
+  <circle cx="101" cy="34" r="4" fill="#fbbf24"/>
+</svg>
+

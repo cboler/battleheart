@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <ellipse cx="60" cy="108" rx="30" ry="7" fill="rgba(0,0,0,0.45)"/>
+  <rect x="47" y="84" width="8" height="20" rx="3" fill="#e2e8f0" stroke="#0f172a" stroke-width="3"/>
+  <rect x="65" y="84" width="8" height="20" rx="3" fill="#e2e8f0" stroke="#0f172a" stroke-width="3"/>
+  <!-- Ribcage Torso -->
+  <rect x="42" y="54" width="36" height="32" rx="6" fill="#1e293b" stroke="#0f172a" stroke-width="3.5"/>
+  <path d="M46 62 L74 62 M46 70 L74 70 M46 78 L74 78" stroke="#e2e8f0" stroke-width="4" stroke-linecap="round"/>
+  <!-- Skull -->
+  <circle cx="60" cy="36" r="20" fill="#f1f5f9" stroke="#0f172a" stroke-width="3.5"/>
+  <rect x="50" y="48" width="20" height="10" rx="3" fill="#f1f5f9" stroke="#0f172a" stroke-width="3"/>
+  <circle cx="52" cy="36" r="5" fill="#0f172a"/>
+  <circle cx="68" cy="36" r="5" fill="#0f172a"/>
+  <circle cx="52" cy="36" r="2" fill="#38bdf8"/>
+  <circle cx="68" cy="36" r="2" fill="#38bdf8"/>
+  <!-- Scimitar -->
+  <g transform="translate(24, 62) rotate(-25)">
+    <path d="M0 -30 Q-12 -12 0 4 L6 4 Q0 -12 6 -30 Z" fill="#cbd5e1" stroke="#0f172a" stroke-width="2.5"/>
+  </g>
+</svg>
+

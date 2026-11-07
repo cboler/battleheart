@@ -1,7 +1,7 @@
 {
-  "name": "Angular PWA Starter",
-  "short_name": "Angular PWA",
-  "description": "A clean, production-ready Angular PWA starter for GitHub Pages.",
+  "name": "Battleheart • Tactical Party RPG",
+  "short_name": "Battleheart",
+  "description": "Tactical real-time line-drawing RPG inspired by the original Battleheart, with bespoke SVG art, local saves, and controller support.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
