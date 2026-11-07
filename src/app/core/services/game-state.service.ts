@@ -27,6 +27,8 @@ export interface ComputedHeroStats {
   attackIntervalSec: number;
   moveSpeed: number;
   critChance: number;
+  dodgeChance: number;
+  counterOnDodge: boolean;
   lifesteal: number;
   cooldownMultiplier: number;
   regenPctPerSec: number;
@@ -137,7 +139,12 @@ export class GameStateService {
     const p = this.profile();
     const heroSave = p.heroes[classId];
     const def = HERO_CATALOG[classId];
-    if (!heroSave || heroSave.unlocked || p.gold < def.hireCost) {
+    if (
+      !heroSave ||
+      heroSave.unlocked ||
+      p.gold < def.hireCost ||
+      this.highestClearedStageIndex() < def.unlockStageIndex
+    ) {
       return false;
     }
 
@@ -327,7 +334,11 @@ export class GameStateService {
     xpEarned: number,
     stars: number,
     arenaKills = 0,
-  ): { leveledUpHeroes: string[]; droppedRelicName: string | null } {
+  ): {
+    leveledUpHeroes: string[];
+    droppedRelicName: string | null;
+    unlockedHeroName: string | null;
+  } {
     const p = this.profile();
     const updatedHeroes = { ...p.heroes };
     const leveledUpHeroes: string[] = [];
@@ -358,8 +369,15 @@ export class GameStateService {
     }
 
     const completedSet = new Set(p.completedStageIds);
+    const isFirstClear = !stage.isArena && stars > 0 && !completedSet.has(stage.id);
     if (!stage.isArena && stars > 0) {
       completedSet.add(stage.id);
+    }
+
+    let unlockedHeroName: string | null = null;
+    if (isFirstClear && stage.unlocksHeroId) {
+      const unlockedHeroDef = HERO_CATALOG[stage.unlocksHeroId];
+      unlockedHeroName = `${unlockedHeroDef.name} (${unlockedHeroDef.title})`;
     }
 
     const prevStars = p.stageStars[stage.id] ?? 0;
@@ -392,7 +410,7 @@ export class GameStateService {
       heroes: updatedHeroes,
     });
 
-    return { leveledUpHeroes, droppedRelicName };
+    return { leveledUpHeroes, droppedRelicName, unlockedHeroName };
   }
 
   public computeHeroStats(classId: HeroClassId, save: HeroSaveState): ComputedHeroStats {
@@ -410,6 +428,8 @@ export class GameStateService {
     let attackIntervalSec = def.attackIntervalSec;
     let moveSpeed = def.moveSpeed;
     let critChance = 0.1;
+    let dodgeChance = def.baseDodgeChance ?? 0.04;
+    let counterOnDodge = classId === 'monk';
     let lifesteal = 0;
     let cooldownMultiplier = 1.0;
     let regenPctPerSec = 0;
@@ -442,9 +462,14 @@ export class GameStateService {
       switch (sk.id) {
         case 'fortified-plate':
         case 'crusader-aura':
-        case 'iron-body':
           maxHp *= 1.25;
           defense += 5;
+          break;
+        case 'iron-body':
+          // Monk's Phantom Reflexes: +15% permanent Dodge Chance, +20% Max HP & counter-attack on dodge
+          maxHp *= 1.2;
+          dodgeChance += 0.15;
+          counterOnDodge = true;
           break;
         case 'mana-barrier':
           maxHp *= 1.35;
@@ -518,7 +543,7 @@ export class GameStateService {
           break;
         case 'harmonic-flow':
           lifesteal += 0.18;
-          regenPctPerSec += 0.02;
+          regenPctPerSec += 0.025;
           break;
       }
     }
@@ -528,6 +553,7 @@ export class GameStateService {
       if (trinket.attackBonusPct) attack *= 1 + trinket.attackBonusPct;
       if (trinket.defenseBonus) defense += trinket.defenseBonus;
       if (trinket.critBonusPct) critChance += trinket.critBonusPct;
+      if (trinket.dodgeBonusPct) dodgeChance += trinket.dodgeBonusPct;
       if (trinket.cooldownReductionPct) cooldownMultiplier *= 1 - trinket.cooldownReductionPct;
       if (trinket.speedBonusPct) moveSpeed *= 1 + trinket.speedBonusPct;
       if (trinket.lifestealPct) lifesteal += trinket.lifestealPct;
@@ -543,6 +569,8 @@ export class GameStateService {
       attackIntervalSec: Number(attackIntervalSec.toFixed(2)),
       moveSpeed: Math.round(moveSpeed),
       critChance: Number(critChance.toFixed(2)),
+      dodgeChance: Math.min(0.65, Number(dodgeChance.toFixed(2))),
+      counterOnDodge,
       lifesteal: Number(lifesteal.toFixed(2)),
       cooldownMultiplier: Number(cooldownMultiplier.toFixed(2)),
       regenPctPerSec,

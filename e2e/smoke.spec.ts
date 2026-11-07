@@ -30,9 +30,10 @@ test.describe('Battleheart Responsive Shell & Gameplay Smoke Tests', () => {
     });
     expect(hasHorizontalOverflow).toBeFalsy();
 
-    // 4. Switch to Tavern tab and verify 8 hero classes are rendered
+    // 4. Switch to Tavern tab and verify 10 hero classes are rendered (with story-locked progression)
     await page.locator('#tab-tavern').click();
-    await expect(page.locator('.hero-card')).toHaveCount(8);
+    await expect(page.locator('.hero-card')).toHaveCount(10);
+    await expect(page.locator('.hero-card.story-locked')).toHaveCount(6);
 
     // 4b. Switch to Armory tab and verify progressive Forge tier banner and dual relic slots
     await page.locator('#tab-armory').click();

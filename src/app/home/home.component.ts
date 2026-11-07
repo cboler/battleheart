@@ -13,6 +13,7 @@ import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import {
   ARMOR_TIERS,
+  HERO_CATALOG,
   STAGE_CATALOG,
   TRINKET_CATALOG,
   WEAPON_TIERS,
@@ -20,6 +21,7 @@ import {
 import {
   CombatUnit,
   EquipmentTier,
+  HeroClassDefinition,
   HeroClassId,
   StageDefinition,
   TrinketDefinition,
@@ -184,6 +186,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   protected getTrinketById(id: string | null | undefined): TrinketDefinition | null {
     if (!id) return null;
     return TRINKET_CATALOG.find((t) => t.id === id) ?? null;
+  }
+
+  protected getHeroDefById(id: HeroClassId | undefined): HeroClassDefinition | null {
+    if (!id) return null;
+    return HERO_CATALOG[id] ?? null;
   }
 
   protected launchStage(stage: StageDefinition): void {

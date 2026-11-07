@@ -644,7 +644,16 @@
   }
 
   &.locked {
-    opacity: 0.78;
+    opacity: 0.85;
+  }
+
+  &.story-locked {
+    border-style: dashed;
+    border-color: #574128;
+
+    .hero-portrait {
+      filter: saturate(0.35) brightness(0.75);
+    }
   }
 }
 

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="witchCloak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4c1d95"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+    <radialGradient id="hexOrb" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#d9f99d"/>
+      <stop offset="55%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#581c87"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="60" cy="108" rx="34" ry="8" fill="rgba(0,0,0,0.45)"/>
+  <!-- Tattered Hex Cloak -->
+  <path d="M36 56 L26 102 L42 97 L54 103 L66 97 L78 103 L94 102 L84 56 Z" fill="url(#witchCloak)" stroke="#0f172a" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M52 56 L50 100 M68 56 L70 100" stroke="#c084fc" stroke-width="2.5"/>
+  <!-- Pale Face & Violet Hair -->
+  <path d="M38 42 Q32 68 42 76" stroke="#a855f7" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M82 42 Q88 68 78 76" stroke="#a855f7" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <circle cx="60" cy="45" r="17" fill="#e2e8f0" stroke="#0f172a" stroke-width="3"/>
+  <!-- Glowing Hex Eyes -->
+  <ellipse cx="53" cy="46" rx="3.5" ry="2.8" fill="#a855f7"/>
+  <ellipse cx="67" cy="46" rx="3.5" ry="2.8" fill="#a855f7"/>
+  <circle cx="53" cy="46" r="1.3" fill="#ecfccb"/>
+  <circle cx="67" cy="46" r="1.3" fill="#ecfccb"/>
+  <!-- Crooked Witch Hat with Buckle -->
+  <path d="M20 36 Q60 44 100 36 L78 26 L74 6 L52 14 L42 26 Z" fill="#1e1b4b" stroke="#0f172a" stroke-width="3.5" stroke-linejoin="round"/>
+  <rect x="52" y="23" width="16" height="8" rx="2" fill="#fde047" stroke="#0f172a" stroke-width="2"/>
+  <!-- Skull Hex Staff -->
+  <g transform="translate(90, 56)">
+    <path d="M0 46 L0 -24" stroke="#3f2818" stroke-width="5.5" stroke-linecap="round"/>
+    <circle cx="0" cy="-32" r="10" fill="url(#hexOrb)" stroke="#0f172a" stroke-width="2.5"/>
+    <circle cx="-3" cy="-33" r="2" fill="#0f172a"/>
+    <circle cx="3" cy="-33" r="2" fill="#0f172a"/>
+  </g>
+  <!-- Left Hand Soul Flame -->
+  <circle cx="28" cy="64" r="10" fill="url(#hexOrb)"/>
+</svg>

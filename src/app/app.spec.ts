@@ -97,6 +97,33 @@ describe('Battleheart Application & Core Mechanics Tests', () => {
       expect(knight.save.secondTrinketId).toBe('wind-boots');
     });
 
+    it('should progressively gate hero recruitment behind story campaign stages', () => {
+      const state = TestBed.inject(GameStateService);
+      // Give plenty of gold on Stage 0 (by resetting or checking before stage 1 is cleared)
+      // At Stage 0, Monk requires Stage 2 (`unlockStageIndex: 2`)
+      expect(state.hireHero('monk')).toBe(false);
+
+      // Clear Stage 1 -> unlocks Lyra the Ranger (`unlockStageIndex: 1`), but Monk still locked
+      const res1 = state.awardBattleRewards(STAGE_CATALOG[0], 500, 100, 3);
+      expect(res1.unlockedHeroName).toContain('Lyra');
+      expect(state.hireHero('ranger')).toBe(true);
+      expect(state.hireHero('monk')).toBe(false);
+
+      // Clear Stage 2 -> unlocks Kenji the Wind-Step Monk (`unlockStageIndex: 2`)
+      const res2 = state.awardBattleRewards(STAGE_CATALOG[1], 500, 100, 3);
+      expect(res2.unlockedHeroName).toContain('Kenji');
+      expect(state.hireHero('monk')).toBe(true);
+    });
+
+    it('should configure Kenji the Monk as a high-evasion Dodge Tank with Mantra of Wind', () => {
+      const state = TestBed.inject(GameStateService);
+      const monk = state.roster().find((h) => h.def.id === 'monk')!;
+      expect(monk.def.role).toBe('tank');
+      expect(monk.def.tankType).toBe('dodge');
+      expect(monk.dodgeChance).toBeGreaterThanOrEqual(0.3);
+      expect(monk.def.primaryActiveSkill.effectType).toBe('wind-stance');
+    });
+
     it('should export and import save profile JSON cleanly', () => {
       const state = TestBed.inject(GameStateService);
       state.hireHero('wizard');
@@ -191,6 +218,32 @@ describe('Battleheart Application & Core Mechanics Tests', () => {
       expect(tauntedEnemy.targetUnitUid).toBe(knight.uid);
       expect(tauntedEnemy.tankHoldTimer).toBeGreaterThan(0);
       expect(combat.squishyTargetedUids().has(rogue.uid)).toBe(false);
+
+      combat.stopBattle();
+    });
+
+    it('should allow Monk Dodge Tank to activate Wind Stance, taunt nearby enemies, and boost evasion', () => {
+      const state = TestBed.inject(GameStateService);
+      state.awardBattleRewards(STAGE_CATALOG[0], 500, 100, 3);
+      state.awardBattleRewards(STAGE_CATALOG[1], 500, 100, 3);
+      expect(state.hireHero('monk')).toBe(true);
+
+      const combat = TestBed.inject(CombatService);
+      combat.startBattle(STAGE_CATALOG[0]);
+
+      const monk = combat.heroes().find((h) => h.classId === 'monk')!;
+      const enemy = combat.enemies()[0]!;
+      // Place Monk near enemy and activate Mantra of Wind (`wind-stance`)
+      combat.units.update((list) =>
+        list.map((u) => (u.uid === monk.uid ? { ...u, x: enemy.x - 5, y: enemy.y } : u)),
+      );
+      expect(combat.activateHeroSkill(monk.uid, 0)).toBe(true);
+
+      const updatedMonk = combat.heroes().find((h) => h.uid === monk.uid)!;
+      const updatedEnemy = combat.enemies().find((e) => e.uid === enemy.uid)!;
+      expect(updatedMonk.evasionTimer).toBeGreaterThan(0);
+      expect(updatedEnemy.targetUnitUid).toBe(monk.uid);
+      expect(updatedEnemy.tankHoldTimer).toBeGreaterThan(0);
 
       combat.stopBattle();
     });

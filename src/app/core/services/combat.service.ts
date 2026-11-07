@@ -46,6 +46,7 @@ export class CombatService implements OnDestroy {
     leveledUpHeroes: string[];
     bonusLootName: string;
     droppedRelicName: string | null;
+    unlockedHeroName: string | null;
   } | null>(null);
 
   public readonly heroes = computed(() => this.units().filter((u) => u.isHero));
@@ -188,6 +189,8 @@ export class CombatService implements OnDestroy {
         attackTimer: 0.4,
         moveSpeed: h.moveSpeed,
         critChance: h.critChance,
+        dodgeChance: h.dodgeChance,
+        counterOnDodge: h.counterOnDodge,
         lifesteal: h.lifesteal,
         threat: 0,
         threatMultiplier: h.def.threatMultiplier,
@@ -199,6 +202,8 @@ export class CombatService implements OnDestroy {
         specialTimer: 0,
         specialIntervalSec: 0,
         shieldTimer: 0,
+        evasionTimer: 0,
+        weakenTimer: 0,
         invulnerableTimer: 0,
         stunTimer: 0,
         slowTimer: 0,
@@ -357,12 +362,29 @@ export class CombatService implements OnDestroy {
         this.audio.playSkillCast();
         break;
       }
-      case 'war-cry': {
-        hero.threat += 320;
+      case 'wind-stance': {
+        hero.evasionTimer = 6;
+        hero.threat += 260;
         for (const en of livingEnemies) {
-          en.targetUnitUid = hero.uid;
-          en.tankHoldTimer = 6.5;
-          en.aggroResetTimer = 7.0;
+          if (this.dist(hero, en) <= 40) {
+            en.targetUnitUid = hero.uid;
+            en.tankHoldTimer = 6.5;
+            en.aggroResetTimer = 7.0;
+          }
+        }
+        this.addRing(hero.x, hero.y, 20, '#fb923c');
+        this.addText(hero.x, hero.y - 8, '💨 WIND STANCE!', '#38bdf8', true);
+        this.audio.playSkillCast();
+        break;
+      }
+      case 'war-cry': {
+        if (hero.role === 'tank') {
+          hero.threat += 320;
+          for (const en of livingEnemies) {
+            en.targetUnitUid = hero.uid;
+            en.tankHoldTimer = 6.5;
+            en.aggroResetTimer = 7.0;
+          }
         }
         for (const al of livingAllies) {
           al.attackBuffTimer = 6;
@@ -373,12 +395,17 @@ export class CombatService implements OnDestroy {
         break;
       }
       case 'cleave':
-      case 'blade-flurry': {
-        const mult = slot.def.effectType === 'cleave' ? 2.2 : 2.6;
+      case 'blade-flurry':
+      case 'rampage': {
+        const mult =
+          slot.def.effectType === 'cleave' ? 2.2 : slot.def.effectType === 'rampage' ? 2.7 : 2.6;
+        let totalDealt = 0;
         let hitAny = false;
         for (const en of livingEnemies) {
           if (this.dist(hero, en) <= 24) {
-            this.applyDamage(hero, en, Math.round(hero.attack * mult), true);
+            const raw = Math.round(hero.attack * mult);
+            this.applyDamage(hero, en, raw, true);
+            totalDealt += raw;
             if (hero.role === 'tank') {
               en.targetUnitUid = hero.uid;
               en.tankHoldTimer = 4.5;
@@ -387,14 +414,60 @@ export class CombatService implements OnDestroy {
           }
         }
         if (!hitAny && livingEnemies[0]) {
-          this.applyDamage(hero, livingEnemies[0], Math.round(hero.attack * mult), true);
+          const raw = Math.round(hero.attack * mult);
+          this.applyDamage(hero, livingEnemies[0], raw, true);
+          totalDealt += raw;
           if (hero.role === 'tank') {
             livingEnemies[0].targetUnitUid = hero.uid;
             livingEnemies[0].tankHoldTimer = 4.5;
           }
         }
+        if (slot.def.effectType === 'rampage' && totalDealt > 0) {
+          this.applyHeal(hero, Math.round(totalDealt * 0.25), false);
+          this.addText(hero.x, hero.y - 8, '🪓 RAMPAGE!', '#ef4444', true);
+        }
         this.addRing(hero.x, hero.y, 22, hero.accentColor);
         this.audio.playSlash();
+        break;
+      }
+      case 'undying-rage': {
+        hero.invulnerableTimer = 4.5;
+        hero.hasteTimer = 6;
+        hero.attackBuffTimer = 6;
+        this.addRing(hero.x, hero.y, 20, '#ef4444');
+        this.addText(hero.x, hero.y - 9, '🔥 UNDYING FRENZY!', '#ef4444', true);
+        this.audio.playSkillCast();
+        break;
+      }
+      case 'soul-drain': {
+        const target =
+          livingEnemies.find((e) => e.uid === hero.targetUnitUid) ??
+          [...livingEnemies].sort((a, b) => b.attack - a.attack)[0];
+        if (target) {
+          const dmg = Math.round(hero.attack * 2.8);
+          this.applyDamage(hero, target, dmg, true);
+          target.weakenTimer = 6;
+          this.addRing(target.x, target.y, 16, '#a855f7');
+          this.addText(target.x, target.y - 9, '🟣 WEAKENED (-35% DMG)!', '#c084fc', true);
+          const mend = Math.round(hero.attack * 1.45);
+          this.applyHeal(hero, mend, false);
+          const lowestAlly = [...livingAllies].sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+          if (lowestAlly && lowestAlly.uid !== hero.uid) {
+            this.applyHeal(lowestAlly, mend, false);
+          }
+        }
+        this.audio.playSkillCast();
+        break;
+      }
+      case 'hex-curse': {
+        for (const en of livingEnemies) {
+          this.applyDamage(hero, en, Math.round(hero.attack * 1.6), false);
+          en.weakenTimer = 6;
+          en.slowTimer = 6;
+          this.addRing(en.x, en.y, 14, '#a855f7');
+        }
+        this.addText(hero.x, hero.y - 8, '🟣 COVENANT HEX (-35% DMG)!', '#c084fc', true);
+        this.audio.playSkillCast();
         break;
       }
       case 'group-heal': {
@@ -426,6 +499,11 @@ export class CombatService implements OnDestroy {
         const heal = Math.round(hero.attack * 1.7);
         for (const en of livingEnemies) {
           this.applyDamage(hero, en, dmg, true);
+          if (hero.role === 'tank' && this.dist(hero, en) <= 32) {
+            en.targetUnitUid = hero.uid;
+            en.tankHoldTimer = 5.5;
+            en.aggroResetTimer = 6.5;
+          }
         }
         for (const al of livingAllies) {
           this.applyHeal(al, heal, false);
@@ -445,8 +523,21 @@ export class CombatService implements OnDestroy {
           hero.moveDestination = null;
           hero.targetUnitUid = target.uid;
           this.applyDamage(hero, target, Math.round(hero.attack * 3.3), true);
-          target.poisonTimer = 5;
-          target.poisonDps = Math.round(hero.attack * 0.4);
+          if (slot.def.effectType === 'flying-kick') {
+            target.stunTimer = Math.max(target.stunTimer, 2.5);
+            if (hero.role === 'tank') {
+              for (const en of livingEnemies) {
+                if (this.dist(hero, en) <= 28) {
+                  en.targetUnitUid = hero.uid;
+                  en.tankHoldTimer = 5.5;
+                  en.aggroResetTimer = 6.5;
+                }
+              }
+            }
+          } else {
+            target.poisonTimer = 5;
+            target.poisonDps = Math.round(hero.attack * 0.4);
+          }
           this.addRing(target.x, target.y, 16, hero.accentColor);
         }
         this.audio.playSlash();
@@ -591,6 +682,8 @@ export class CombatService implements OnDestroy {
         }
       }
       unit.shieldTimer = Math.max(0, unit.shieldTimer - clampedDt);
+      unit.evasionTimer = Math.max(0, unit.evasionTimer - clampedDt);
+      unit.weakenTimer = Math.max(0, unit.weakenTimer - clampedDt);
       unit.invulnerableTimer = Math.max(0, unit.invulnerableTimer - clampedDt);
       unit.stunTimer = Math.max(0, unit.stunTimer - clampedDt);
       unit.slowTimer = Math.max(0, unit.slowTimer - clampedDt);
@@ -888,24 +981,40 @@ export class CombatService implements OnDestroy {
       hero.y = this.clampY(hero.y + (dy / d) * speed * dt);
       hero.isMoving = true;
     } else {
-      const rateMult = hero.hasteTimer > 0 ? 1.35 : 1;
+      // Barbarian Berserker Passive: attacks faster & hits up to +55% harder as his HP drops!
+      const missingHpRatio =
+        hero.classId === 'barbarian' ? Math.max(0, 1 - hero.hp / Math.max(1, hero.maxHp)) : 0;
+      const berserkMult = 1 + missingHpRatio * 0.55;
+      const rateMult = (hero.hasteTimer > 0 ? 1.35 : 1) * berserkMult;
       hero.attackTimer -= dt * rateMult;
       if (hero.attackTimer <= 0) {
         hero.attackTimer = hero.attackIntervalSec;
         hero.attackAnimTimer = 0.25;
 
         const isCrit = Math.random() < hero.critChance;
-        const rawDmg = hero.attack * (hero.attackBuffTimer > 0 ? 1.25 : 1) * (isCrit ? 1.75 : 1);
+        const rawDmg =
+          hero.attack * berserkMult * (hero.attackBuffTimer > 0 ? 1.25 : 1) * (isCrit ? 1.75 : 1);
         const dmg = Math.round(rawDmg);
 
         if (hero.attackRange > 20) {
           const color =
-            hero.classId === 'wizard' ? '#f97316' : hero.classId === 'bard' ? '#10b981' : '#fde047';
+            hero.classId === 'wizard'
+              ? '#f97316'
+              : hero.classId === 'witch'
+                ? '#a855f7'
+                : hero.classId === 'bard'
+                  ? '#10b981'
+                  : '#fde047';
           this.spawnProjectile(hero, target, color, false, dmg);
           this.audio.playArrow();
         } else {
           this.applyDamage(hero, target, dmg, isCrit);
           this.audio.playSlash();
+        }
+
+        // Witch hex passive: basic shadow bolts weaken target enemy damage for 3.5s
+        if (hero.classId === 'witch') {
+          target.weakenTimer = Math.max(target.weakenTimer, 3.5);
         }
 
         // Paladin / Bard passive party splash heal on basic attack
@@ -948,6 +1057,7 @@ export class CombatService implements OnDestroy {
           enemy.attackTimer = enemy.attackIntervalSec;
           enemy.attackAnimTimer = 0.28;
           this.spawnProjectile(enemy, injuredAllies[0], '#a855f7', true, enemy.attack * 2);
+          this.addText(enemy.x, enemy.y - 8, '💜 DARK MEND', '#c084fc', false);
           return;
         }
       }
@@ -960,11 +1070,12 @@ export class CombatService implements OnDestroy {
 
     let target = heroes.find((h) => h.uid === enemy.targetUnitUid);
 
-    // 2. If targeting a Tank who walked out of melee range (kiting or chasing another mob) without Shield Wall, drop aggro immediately!
+    // 2. If targeting a Tank who walked out of melee range (kiting or chasing another mob) without Shield Wall/Wind Stance, drop aggro immediately!
     if (
       target &&
       target.role === 'tank' &&
       target.shieldTimer <= 0 &&
+      target.evasionTimer <= 0 &&
       this.dist(enemy, target) > enemy.attackRange + 8 &&
       (enemy.tankHoldTimer ?? 0) < 3.5
     ) {
@@ -1018,6 +1129,16 @@ export class CombatService implements OnDestroy {
 
     const d = this.dist(enemy, target);
     enemy.facing = target.x >= enemy.x ? 'right' : 'left';
+
+    // Ranged sniper kiting: if a melee hero closes within 13 units of a non-boss ranged enemy, step back while firing!
+    if (def?.isRanged && !def?.isBoss && d < 13 && enemy.x < 90) {
+      const dx = enemy.x - target.x;
+      const dy = enemy.y - target.y;
+      const norm = Math.max(1, Math.hypot(dx, dy));
+      enemy.x = this.clampX(enemy.x + (dx / norm) * speed * 0.65 * dt);
+      enemy.y = this.clampY(enemy.y + (dy / norm) * speed * 0.65 * dt);
+      enemy.isMoving = true;
+    }
 
     if (d > enemy.attackRange) {
       const dx = target.x - enemy.x;
@@ -1156,20 +1277,59 @@ export class CombatService implements OnDestroy {
   ): void {
     if (target.invulnerableTimer > 0 || target.hp <= 0) return;
 
+    // Witch Hex / Weaken debuff: weakened enemies deal 35% less damage!
+    const effectiveRaw =
+      attacker && attacker.weakenTimer > 0 ? Math.round(rawAmount * 0.65) : rawAmount;
+
+    // Dodge Tank & Evasion Mechanic (Monk Wind Stance, Rogue agility, Zephyr Greaves):
+    if (target.isHero && (!attacker || !attacker.isHero)) {
+      const totalDodge = Math.min(
+        0.85,
+        (target.dodgeChance ?? 0) + (target.evasionTimer > 0 ? 0.52 : 0),
+      );
+      if (totalDodge > 0 && Math.random() < totalDodge) {
+        if (attacker && target.role === 'tank') {
+          attacker.targetUnitUid = target.uid;
+          attacker.tankHoldTimer = Math.max(attacker.tankHoldTimer ?? 0, 3.8);
+          attacker.aggroResetTimer = Math.max(attacker.aggroResetTimer ?? 0, 5.8);
+        }
+        this.addText(target.x, target.y - 7, '💨 DODGE!', '#38bdf8', false);
+        // Monk Dodge Tank Counter-Attack!
+        if (
+          attacker &&
+          attacker.hp > 0 &&
+          (target.counterOnDodge || target.evasionTimer > 0) &&
+          this.dist(target, attacker) <= 18
+        ) {
+          target.attackAnimTimer = 0.22;
+          const counterDmg = Math.max(
+            4,
+            Math.round((target.attack * 0.85 * 100) / (100 + Math.max(0, attacker.defense) * 3.5)),
+          );
+          attacker.hp = Math.max(0, attacker.hp - counterDmg);
+          attacker.hurtAnimTimer = 0.16;
+          this.addText(attacker.x, attacker.y - 8, `⚡ COUNTER -${counterDmg}!`, '#fb923c', true);
+        }
+        return;
+      }
+    }
+
     // "Use Your Tank or Everybody Dies" Mitigation:
-    // Tanks wear heavy plate and mitigate physical blows; non-tank squishies take 1.55x unshielded damage!
+    // Plate Tanks mitigate heavy blows with armor; Dodge Tank (Monk) relies on high evasion + martial stance;
+    // Non-tank squishies take 1.55x unshielded damage when they pull aggro!
     let dmg: number;
     if (target.isHero) {
       if (target.role === 'tank') {
-        const mitigation = 100 / (100 + Math.max(0, target.defense) * 5.8);
-        dmg = Math.max(2, Math.round(rawAmount * mitigation));
+        const armorFactor = target.classId === 'monk' ? 3.8 : 5.8;
+        const mitigation = 100 / (100 + Math.max(0, target.defense) * armorFactor);
+        dmg = Math.max(2, Math.round(effectiveRaw * mitigation));
       } else {
         const mitigation = 100 / (100 + Math.max(0, target.defense) * 1.8);
-        dmg = Math.max(5, Math.round(rawAmount * 1.55 * mitigation));
+        dmg = Math.max(5, Math.round(effectiveRaw * 1.55 * mitigation));
       }
     } else {
       const mitigation = 100 / (100 + Math.max(0, target.defense) * 3.5);
-      dmg = Math.max(2, Math.round(rawAmount * mitigation));
+      dmg = Math.max(2, Math.round(effectiveRaw * mitigation));
     }
 
     if (target.shieldTimer > 0) {
@@ -1342,6 +1502,7 @@ export class CombatService implements OnDestroy {
       attackTimer: 0.6 + (offsetIdx % 3) * 0.25,
       moveSpeed: def.moveSpeed,
       critChance: 0.05,
+      dodgeChance: 0,
       lifesteal: 0,
       threat: 0,
       threatMultiplier: 1,
@@ -1350,6 +1511,8 @@ export class CombatService implements OnDestroy {
       specialTimer: 0,
       specialIntervalSec: def.specialIntervalSec ?? 8,
       shieldTimer: 0,
+      evasionTimer: 0,
+      weakenTimer: 0,
       invulnerableTimer: 0,
       stunTimer: 0,
       slowTimer: 0,
@@ -1389,6 +1552,7 @@ export class CombatService implements OnDestroy {
         leveledUpHeroes: res.leveledUpHeroes,
         bonusLootName: stage.isArena ? 'Colosseum Valor Purse' : 'Retreat Salvage Pouch',
         droppedRelicName: res.droppedRelicName,
+        unlockedHeroName: res.unlockedHeroName,
       });
       return;
     }
@@ -1427,6 +1591,7 @@ export class CombatService implements OnDestroy {
           leveledUpHeroes: res.leveledUpHeroes,
           bonusLootName: spoilsPool[(stage.index - 1) % spoilsPool.length] ?? spoilsPool[0],
           droppedRelicName: res.droppedRelicName,
+          unlockedHeroName: res.unlockedHeroName,
         });
       }
     }

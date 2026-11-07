@@ -250,8 +250,17 @@
                 </div>
               </div>
 
-              @if (sel.stage.unlocksGearTier || sel.stage.bossDropTrinketId) {
+              @if (
+                sel.stage.unlocksGearTier || sel.stage.bossDropTrinketId || sel.stage.unlocksHeroId
+              ) {
                 <div class="scroll-unlocks-box">
+                  @if (getHeroDefById(sel.stage.unlocksHeroId); as unlockedHero) {
+                    <div class="unlock-callout">
+                      🍺 <strong>First Clear:</strong> Unlocks {{ unlockedHero.name }} ({{
+                        unlockedHero.title
+                      }}) in Tavern
+                    </div>
+                  }
                   @if (sel.stage.unlocksGearTier; as tierNum) {
                     <div class="unlock-callout">
                       ⚒️ <strong>First Clear:</strong> Unlocks Tier {{ tierNum }} Blacksmith Forging
@@ -332,18 +341,21 @@
           <div>
             <h2>🍺 The King's Hearth Tavern</h2>
             <p>
-              Recruit up to 8 legendary heroes and assign up to <strong>4 champions</strong> to
-              march in your active battle party.
+              Recruit up to 10 legendary heroes—unlocking new classes as you clear campaign
+              missions—and assign up to <strong>4 champions</strong> to march in your active battle
+              party.
             </p>
           </div>
         </div>
 
         <div class="roster-grid">
           @for (h of gameState.roster(); track h.def.id) {
+            @let storyUnlocked = gameState.highestClearedStageIndex() >= h.def.unlockStageIndex;
             <article
               class="hero-card"
               [class.in-party]="h.save.inParty"
               [class.locked]="!h.save.unlocked"
+              [class.story-locked]="!storyUnlocked && !h.save.unlocked"
             >
               <div class="hero-card-top">
                 <div class="portrait-pedestal" [style.borderColor]="h.def.accentColor">
@@ -351,7 +363,13 @@
                 </div>
                 <div class="hero-identity">
                   <span class="role-tag" [style.borderColor]="h.def.accentColor">
-                    {{ h.def.role.toUpperCase() }}
+                    @if (h.def.tankType === 'dodge') {
+                      🥋 DODGE TANK
+                    } @else if (h.def.tankType === 'plate') {
+                      🛡️ PLATE TANK
+                    } @else {
+                      {{ h.def.role.toUpperCase() }}
+                    }
                   </span>
                   <h3>{{ h.def.name }}</h3>
                   <p class="hero-title">{{ h.def.title }} • Lv.{{ h.save.level }}</p>
@@ -363,19 +381,29 @@
               <div class="hero-stats-row">
                 <span>❤️ {{ h.maxHp }} HP</span>
                 <span>{{ h.def.role === 'healer' ? '💚' : '⚔️' }} {{ h.attack }} PWR</span>
-                <span>🛡️ {{ h.defense }} DEF</span>
+                @if (h.def.tankType === 'dodge' || h.dodgeChance >= 0.15) {
+                  <span>💨 {{ (h.dodgeChance * 100).toFixed(0) }}% EVA</span>
+                } @else {
+                  <span>🛡️ {{ h.defense }} DEF</span>
+                }
               </div>
 
               <div class="hero-card-actions">
                 @if (!h.save.unlocked) {
-                  <button
-                    type="button"
-                    class="btn-gold"
-                    [disabled]="gameState.gold() < h.def.hireCost"
-                    (click)="gameState.hireHero(h.def.id)"
-                  >
-                    🪙 Recruit Hero ({{ h.def.hireCost }}g)
-                  </button>
+                  @if (!storyUnlocked) {
+                    <div class="tier-gate-notice hero-story-lock">
+                      🔒 Clear Stage {{ h.def.unlockStageIndex }} to Unlock in Tavern
+                    </div>
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn-gold"
+                      [disabled]="gameState.gold() < h.def.hireCost"
+                      (click)="gameState.hireHero(h.def.id)"
+                    >
+                      🪙 Recruit Hero ({{ h.def.hireCost }}g)
+                    </button>
+                  }
                 } @else {
                   <button
                     type="button"
@@ -463,7 +491,7 @@
                   {{ hero.attack }}
                 </div>
                 <div><strong>Defense:</strong> {{ hero.defense }}</div>
-                <div><strong>Crit Chance:</strong> {{ (hero.critChance * 100).toFixed(0) }}%</div>
+                <div><strong>Dodge Chance:</strong> {{ (hero.dodgeChance * 100).toFixed(0) }}%</div>
               </div>
 
               <!-- Dual Equipped Trinket Slots (Classic Battleheart 2-Slot Loadout) -->
@@ -795,8 +823,9 @@
               <li>
                 <strong>Heroes:</strong>
                 <code>public/assets/svg/heroes/knight.svg</code>, <code>cleric.svg</code>,
-                <code>rogue.svg</code>, <code>wizard.svg</code>, <code>paladin.svg</code>,
-                <code>bard.svg</code>, <code>ranger.svg</code>, <code>monk.svg</code>
+                <code>rogue.svg</code>, <code>wizard.svg</code>, <code>ranger.svg</code>,
+                <code>monk.svg</code>, <code>witch.svg</code>, <code>paladin.svg</code>,
+                <code>bard.svg</code>, <code>barbarian.svg</code>
               </li>
               <li>
                 <strong>Monsters &amp; Bosses:</strong>
@@ -1208,6 +1237,12 @@
                 @if (unit.shieldTimer > 0) {
                   <span>🛡️</span>
                 }
+                @if (unit.evasionTimer > 0) {
+                  <span title="Wind Stance (+52% Dodge)">💨</span>
+                }
+                @if (unit.weakenTimer > 0) {
+                  <span title="Hexed (-35% Damage)">🟣</span>
+                }
                 @if (unit.stunTimer > 0) {
                   <span>💫</span>
                 }
@@ -1317,6 +1352,12 @@
                   <div class="spoils-chest-box" aria-hidden="true">
                     <span class="chest-icon">🧰</span>
                     <span class="chest-name">{{ reward.bonusLootName }}</span>
+                  </div>
+                }
+                @if (reward.unlockedHeroName) {
+                  <div class="bis-drop-banner">
+                    🍺 NEW HERO UNLOCKED IN TAVERN: <strong>{{ reward.unlockedHeroName }}</strong
+                    >!
                   </div>
                 }
                 @if (reward.droppedRelicName) {

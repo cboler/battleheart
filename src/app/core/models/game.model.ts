@@ -1,5 +1,14 @@
 export type HeroClassId =
-  'knight' | 'cleric' | 'rogue' | 'wizard' | 'paladin' | 'bard' | 'ranger' | 'monk';
+  | 'knight'
+  | 'cleric'
+  | 'rogue'
+  | 'wizard'
+  | 'paladin'
+  | 'bard'
+  | 'ranger'
+  | 'monk'
+  | 'witch'
+  | 'barbarian';
 
 export type HeroRole = 'tank' | 'healer' | 'melee-dps' | 'ranged-dps' | 'support';
 
@@ -61,6 +70,11 @@ export interface SkillDefinition {
     | 'flying-kick'
     | 'palm-strike'
     | 'chi-burst'
+    | 'wind-stance'
+    | 'soul-drain'
+    | 'hex-curse'
+    | 'undying-rage'
+    | 'rampage'
     | 'passive';
 }
 
@@ -78,6 +92,9 @@ export interface HeroClassDefinition {
   name: string;
   title: string;
   role: HeroRole;
+  tankType?: 'plate' | 'dodge';
+  unlockStageIndex: number; // 0 = available from start, 1..9 = unlocked after clearing that stage!
+  baseDodgeChance?: number;
   description: string;
   svgAsset: string;
   accentColor: string;
@@ -132,6 +149,7 @@ export interface TrinketDefinition {
   speedBonusPct?: number;
   lifestealPct?: number;
   regenPct?: number;
+  dodgeBonusPct?: number;
 }
 
 export interface EnemyDefinition {
@@ -173,6 +191,7 @@ export interface StageDefinition {
   xpReward: number;
   isArena?: boolean;
   unlocksGearTier?: number;
+  unlocksHeroId?: HeroClassId;
   bossDropTrinketId?: string;
   waves: WaveSpawn[][];
   mapX: number; // percentage on world map
@@ -218,6 +237,7 @@ export interface CombatUnit {
   hp: number;
   attack: number;
   defense: number;
+  dodgeChance: number;
   attackRange: number;
   attackIntervalSec: number;
   attackTimer: number;
@@ -241,6 +261,9 @@ export interface CombatUnit {
 
   // Status Effects
   shieldTimer: number; // 65% damage reduction
+  evasionTimer: number; // +52% Dodge Tank stance
+  weakenTimer: number; // -35% Enemy attack damage (Witch Hex)
+  counterOnDodge?: boolean;
   invulnerableTimer: number;
   stunTimer: number;
   slowTimer: number;

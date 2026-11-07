@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="furArmor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#991b1b"/>
+      <stop offset="100%" stop-color="#450a0a"/>
+    </linearGradient>
+    <linearGradient id="axeSteel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#64748b"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="60" cy="108" rx="36" ry="8" fill="rgba(0,0,0,0.45)"/>
+  <!-- Twin Battle-Axes (Left & Right) -->
+  <g transform="translate(20, 58) rotate(-18)">
+    <rect x="-3" y="-26" width="6" height="52" rx="2" fill="#78350f" stroke="#0f172a" stroke-width="2.5"/>
+    <path d="M-3 -22 Q-24 -32 -22 -4 Q-12 -10 -3 -8 Z" fill="url(#axeSteel)" stroke="#0f172a" stroke-width="2.5"/>
+  </g>
+  <g transform="translate(100, 58) rotate(18)">
+    <rect x="-3" y="-26" width="6" height="52" rx="2" fill="#78350f" stroke="#0f172a" stroke-width="2.5"/>
+    <path d="M3 -22 Q24 -32 22 -4 Q12 -10 3 -8 Z" fill="url(#axeSteel)" stroke="#0f172a" stroke-width="2.5"/>
+  </g>
+  <!-- Muscular Fur-Clad Torso & Skull Belt -->
+  <rect x="34" y="54" width="52" height="46" rx="10" fill="url(#furArmor)" stroke="#0f172a" stroke-width="3.5"/>
+  <path d="M32 56 Q60 68 88 56" fill="none" stroke="#d6c5b3" stroke-width="7" stroke-linecap="round"/>
+  <rect x="34" y="82" width="52" height="9" fill="#451a03" stroke="#0f172a" stroke-width="2.5"/>
+  <circle cx="60" cy="86.5" r="6" fill="#fef08a" stroke="#0f172a" stroke-width="2"/>
+  <!-- Fierce Head & Crimson Warpaint -->
+  <circle cx="60" cy="40" r="18" fill="#fdba74" stroke="#0f172a" stroke-width="3"/>
+  <path d="M46 38 L56 42 M74 38 L64 42" stroke="#dc2626" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="53" cy="42" r="2.5" fill="#0f172a"/>
+  <circle cx="67" cy="42" r="2.5" fill="#0f172a"/>
+  <!-- Braided Beard -->
+  <path d="M44 48 Q60 72 76 48 Z" fill="#9a3412" stroke="#0f172a" stroke-width="2.5"/>
+  <!-- Horned Iron Brow Helm -->
+  <path d="M42 28 Q30 10 22 18 Q30 28 42 34 Z" fill="#fef3c7" stroke="#0f172a" stroke-width="2.5"/>
+  <path d="M78 28 Q90 10 98 18 Q90 28 78 34 Z" fill="#fef3c7" stroke="#0f172a" stroke-width="2.5"/>
+  <rect x="41" y="25" width="38" height="9" rx="4" fill="#64748b" stroke="#0f172a" stroke-width="2.5"/>
+</svg>
