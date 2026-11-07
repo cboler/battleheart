@@ -600,7 +600,7 @@ export class CombatService implements OnDestroy {
     // 4. Step Floating Combat Text & Ring Effects
     this.floatingTexts.set(
       this.floatingTexts()
-        .map((ft) => ({ ...ft, y: ft.y - 9 * clampedDt, life: ft.life - clampedDt }))
+        .map((ft) => ({ ...ft, y: ft.y - 5.5 * clampedDt, life: ft.life - clampedDt }))
         .filter((ft) => ft.life > 0),
     );
     this.ringEffects.set(
@@ -857,7 +857,7 @@ export class CombatService implements OnDestroy {
             color: '#f97316',
             label: 'GROUND SLAM',
             elapsed: 0,
-            duration: 1.45,
+            duration: 2.0,
             ability: 'ground-slam',
           },
         ]);
@@ -887,7 +887,7 @@ export class CombatService implements OnDestroy {
             color: '#ef4444',
             label: 'INFERNO BREATH',
             elapsed: 0,
-            duration: 1.5,
+            duration: 2.1,
             ability: 'fire-breath',
           },
         ]);
@@ -918,7 +918,9 @@ export class CombatService implements OnDestroy {
   ): void {
     if (target.invulnerableTimer > 0 || target.hp <= 0) return;
 
-    let dmg = Math.max(1, rawAmount - target.defense);
+    // Percentage armor mitigation (prevents early high-defense tanks from taking 1 damage)
+    const mitigation = 100 / (100 + Math.max(0, target.defense) * 3.5);
+    let dmg = Math.max(2, Math.round(rawAmount * mitigation));
     if (target.shieldTimer > 0) {
       dmg = Math.max(1, Math.round(dmg * 0.35));
     }
@@ -969,7 +971,7 @@ export class CombatService implements OnDestroy {
       targetUid: to.uid,
       targetX: to.x,
       targetY: to.y - 3,
-      speed: 62,
+      speed: 34,
       color,
       size: isHeal ? 8 : 7,
       isHeal,
@@ -985,6 +987,7 @@ export class CombatService implements OnDestroy {
     this.waveIndex.set(waveIdx);
     this.waveElapsedSec = 0;
     this.pendingSpawns = [];
+    const waveLeadDelay = waveIdx > 0 ? 0.9 : 0;
 
     if (stage.isArena) {
       // Procedural escalating wave for Endless Arena
@@ -1000,10 +1003,16 @@ export class CombatService implements OnDestroy {
       const count = Math.min(7, 2 + Math.floor(waveIdx / 2));
       for (let i = 0; i < count; i++) {
         const pick = pool[(waveIdx + i) % pool.length];
-        this.pendingSpawns.push({ enemyId: pick, spawnAtElapsed: i * 0.8 });
+        this.pendingSpawns.push({
+          enemyId: pick,
+          spawnAtElapsed: waveLeadDelay + i * 1.35,
+        });
       }
       if (waveIdx > 0 && waveIdx % 4 === 0) {
-        this.pendingSpawns.push({ enemyId: 'cave-troll', spawnAtElapsed: 1.2 });
+        this.pendingSpawns.push({
+          enemyId: 'cave-troll',
+          spawnAtElapsed: waveLeadDelay + 1.8,
+        });
       }
     } else {
       const wave = stage.waves[waveIdx] ?? [];
@@ -1011,7 +1020,7 @@ export class CombatService implements OnDestroy {
         for (let i = 0; i < group.count; i++) {
           this.pendingSpawns.push({
             enemyId: group.enemyId,
-            spawnAtElapsed: group.delaySec + i * 0.65,
+            spawnAtElapsed: waveLeadDelay + group.delaySec + i * 1.25,
           });
         }
       }
@@ -1032,7 +1041,7 @@ export class CombatService implements OnDestroy {
     const waveScale = stage?.isArena ? 1 + this.waveIndex() * 0.14 : 1;
 
     const spawnY = 44 + ((offsetIdx * 13 + this.uidCounter * 7) % 38);
-    const spawnX = 82 + (offsetIdx % 3) * 4;
+    const spawnX = 87 + (offsetIdx % 3) * 2.5;
 
     return {
       uid: `enemy-${this.uidCounter++}`,
@@ -1154,8 +1163,8 @@ export class CombatService implements OnDestroy {
       text,
       color,
       isCrit,
-      life: 0.85,
-      maxLife: 0.85,
+      life: 1.15,
+      maxLife: 1.15,
     };
     this.floatingTexts.set([...this.floatingTexts().slice(-24), item]);
   }

@@ -1258,7 +1258,7 @@
 
 .marching-command-line,
 .marching-heal-beam {
-  animation: bh-march 0.6s linear infinite;
+  animation: bh-march 0.95s linear infinite;
 }
 
 @keyframes bh-march {
@@ -1304,7 +1304,7 @@
   }
 
   &.is-moving {
-    animation: bh-walk-waddle 0.34s ease-in-out infinite alternate;
+    animation: bh-walk-waddle 0.52s ease-in-out infinite alternate;
   }
 
   &.is-attacking .unit-sprite {
