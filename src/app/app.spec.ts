@@ -162,6 +162,38 @@ describe('Battleheart Application & Core Mechanics Tests', () => {
 
       combat.stopBattle();
     });
+
+    it('should pull aggro onto a non-tank DPS when attacking an untanked enemy and snap aggro back when Tank taunts', () => {
+      const combat = TestBed.inject(CombatService);
+      combat.startBattle(STAGE_CATALOG[0]);
+
+      const knight = combat.heroes().find((h) => h.classId === 'knight')!;
+      const rogue = combat.heroes().find((h) => h.classId === 'rogue')!;
+      const enemy = combat.enemies()[0]!;
+
+      // Move Rogue into melee with Enemy 1 and step simulation so Rogue strikes untanked enemy
+      combat.issueCommand(rogue.uid, enemy.uid, null);
+      // Place Rogue right next to enemy to trigger attack on next step
+      combat.units.update((list) =>
+        list.map((u) =>
+          u.uid === rogue.uid ? { ...u, x: enemy.x - 4, y: enemy.y, attackTimer: 0 } : u,
+        ),
+      );
+      combat.step(0.05);
+
+      const aggroedEnemy = combat.enemies().find((e) => e.uid === enemy.uid)!;
+      expect(aggroedEnemy.targetUnitUid).toBe(rogue.uid);
+      expect(combat.squishyTargetedUids().has(rogue.uid)).toBe(true);
+
+      // Now drag Tank (Knight) onto the enemy to intercept & taunt!
+      combat.issueCommand(knight.uid, enemy.uid, null);
+      const tauntedEnemy = combat.enemies().find((e) => e.uid === enemy.uid)!;
+      expect(tauntedEnemy.targetUnitUid).toBe(knight.uid);
+      expect(tauntedEnemy.tankHoldTimer).toBeGreaterThan(0);
+      expect(combat.squishyTargetedUids().has(rogue.uid)).toBe(false);
+
+      combat.stopBattle();
+    });
   });
 
   describe('StatusComponent', () => {

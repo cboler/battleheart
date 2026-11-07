@@ -79,6 +79,36 @@ export class CombatService implements OnDestroy {
     return beams;
   });
 
+  /**
+   * Visual danger lines from enemies to any NON-TANK hero they are currently hunting!
+   * Immediately alerts the player: "Use your tank to intercept/taunt or your squishy dies!"
+   */
+  public readonly enemyAggroLines = computed(() => {
+    const all = this.units();
+    const heroes = all.filter((u) => u.isHero && u.hp > 0);
+    const enemies = all.filter((u) => !u.isHero && u.hp > 0);
+    const lines: { id: string; x1: number; y1: number; x2: number; y2: number; heroUid: string }[] =
+      [];
+    for (const en of enemies) {
+      const target = heroes.find((h) => h.uid === en.targetUnitUid);
+      if (target && target.role !== 'tank') {
+        lines.push({
+          id: `aggro-${en.uid}`,
+          x1: en.x,
+          y1: en.y - 2,
+          x2: target.x,
+          y2: target.y - 2,
+          heroUid: target.uid,
+        });
+      }
+    }
+    return lines;
+  });
+
+  public readonly squishyTargetedUids = computed(
+    () => new Set(this.enemyAggroLines().map((l) => l.heroUid)),
+  );
+
   private rafId: number | null = null;
   private lastFrameTime = 0;
   private uidCounter = 1;
@@ -159,7 +189,7 @@ export class CombatService implements OnDestroy {
         moveSpeed: h.moveSpeed,
         critChance: h.critChance,
         lifesteal: h.lifesteal,
-        threat: h.def.role === 'tank' ? 80 : 10,
+        threat: 0,
         threatMultiplier: h.def.threatMultiplier,
         skills: h.activeSkills.map((sk) => ({
           def: sk,
@@ -263,7 +293,12 @@ export class CombatService implements OnDestroy {
             hero.threat += 110;
             const targetIdx = all.findIndex((u) => u.uid === target.uid);
             if (targetIdx !== -1) {
-              all[targetIdx] = { ...all[targetIdx], targetUnitUid: hero.uid };
+              all[targetIdx] = {
+                ...all[targetIdx],
+                targetUnitUid: hero.uid,
+                tankHoldTimer: 5.5,
+                aggroResetTimer: 6.5,
+              };
             }
             this.addText(hero.x, hero.y - 8, '🛡️ TAUNT!', '#38bdf8', false);
           }
@@ -311,8 +346,10 @@ export class CombatService implements OnDestroy {
         hero.shieldTimer = 6;
         hero.threat += 250;
         for (const en of livingEnemies) {
-          if (this.dist(hero, en) <= 34) {
+          if (this.dist(hero, en) <= 38) {
             en.targetUnitUid = hero.uid;
+            en.tankHoldTimer = 6.5;
+            en.aggroResetTimer = 7.0;
           }
         }
         this.addRing(hero.x, hero.y, 18, '#38bdf8');
@@ -324,6 +361,8 @@ export class CombatService implements OnDestroy {
         hero.threat += 320;
         for (const en of livingEnemies) {
           en.targetUnitUid = hero.uid;
+          en.tankHoldTimer = 6.5;
+          en.aggroResetTimer = 7.0;
         }
         for (const al of livingAllies) {
           al.attackBuffTimer = 6;
@@ -340,11 +379,19 @@ export class CombatService implements OnDestroy {
         for (const en of livingEnemies) {
           if (this.dist(hero, en) <= 24) {
             this.applyDamage(hero, en, Math.round(hero.attack * mult), true);
+            if (hero.role === 'tank') {
+              en.targetUnitUid = hero.uid;
+              en.tankHoldTimer = 4.5;
+            }
             hitAny = true;
           }
         }
         if (!hitAny && livingEnemies[0]) {
           this.applyDamage(hero, livingEnemies[0], Math.round(hero.attack * mult), true);
+          if (hero.role === 'tank') {
+            livingEnemies[0].targetUnitUid = hero.uid;
+            livingEnemies[0].tankHoldTimer = 4.5;
+          }
         }
         this.addRing(hero.x, hero.y, 22, hero.accentColor);
         this.audio.playSlash();
@@ -408,6 +455,10 @@ export class CombatService implements OnDestroy {
       case 'smoke-bomb': {
         hero.threat = 0;
         for (const en of livingEnemies) {
+          if (en.targetUnitUid === hero.uid) {
+            en.targetUnitUid = null;
+            en.lastAttackerUid = null;
+          }
           if (this.dist(hero, en) <= 28) {
             en.stunTimer = 3.5;
             this.addText(en.x, en.y - 6, 'STUNNED', '#cbd5e1', false);
@@ -597,7 +648,9 @@ export class CombatService implements OnDestroy {
           if (proj.isHeal) {
             this.applyHeal(target, proj.value, false);
           } else {
-            const attacker = allUnits.find((u) => u.isHero === proj.fromHero);
+            const attacker =
+              allUnits.find((u) => u.uid === proj.sourceUid) ??
+              allUnits.find((u) => u.isHero === proj.fromHero);
             this.applyDamage(attacker ?? null, target, proj.value, false);
           }
         }
@@ -667,6 +720,8 @@ export class CombatService implements OnDestroy {
         // Boss Aggro Reset mechanic: forces player to re-taunt with Tank after dodging/eating slam!
         const enemyDef = source.enemyId ? ENEMY_CATALOG[source.enemyId] : null;
         if (enemyDef?.dropsThreatOnSpecial) {
+          source.tankHoldTimer = 0;
+          source.aggroResetTimer = 5.5;
           for (const h of allUnits) {
             if (h.isHero && h.role === 'tank') {
               h.threat = Math.max(0, Math.round(h.threat * 0.15));
@@ -898,17 +953,68 @@ export class CombatService implements OnDestroy {
       }
     }
 
-    // Target acquisition: respect taunt or pick highest threat / nearest hero
+    // Target acquisition: authentic Battleheart per-enemy aggro!
+    // 1. Tick down Tank Hold timer & Periodic Aggro Reset timer
+    enemy.tankHoldTimer = Math.max(0, (enemy.tankHoldTimer ?? 0) - dt);
+    enemy.aggroResetTimer = (enemy.aggroResetTimer ?? 5.5) - dt;
+
     let target = heroes.find((h) => h.uid === enemy.targetUnitUid);
-    if (!target) {
-      // Score combines threat and proximity (classic Battleheart aggro feel)
-      target = [...heroes].sort((a, b) => {
-        const scoreA = a.threat - this.dist(enemy, a) * 1.4;
-        const scoreB = b.threat - this.dist(enemy, b) * 1.4;
-        return scoreB - scoreA;
-      })[0];
-      enemy.targetUnitUid = target.uid;
+
+    // 2. If targeting a Tank who walked out of melee range (kiting or chasing another mob) without Shield Wall, drop aggro immediately!
+    if (
+      target &&
+      target.role === 'tank' &&
+      target.shieldTimer <= 0 &&
+      this.dist(enemy, target) > enemy.attackRange + 8 &&
+      (enemy.tankHoldTimer ?? 0) < 3.5
+    ) {
+      enemy.tankHoldTimer = 0;
+      target = undefined;
     }
+
+    // 3. Frequent Aggro Resets: if not firmly held by a Tank taunt/strike, enemy periodically resets aggro onto whoever hit it last or a squishy!
+    if (enemy.aggroResetTimer <= 0) {
+      enemy.aggroResetTimer = 5.0 + (this.uidCounter % 3) * 0.8;
+      if ((enemy.tankHoldTimer ?? 0) <= 0) {
+        const squishies = heroes.filter((h) => h.role !== 'tank');
+        const lastNonTank = heroes.find(
+          (h) => h.uid === enemy.lastAttackerUid && h.role !== 'tank',
+        );
+        const newTarget =
+          lastNonTank ?? squishies[Math.floor(Math.random() * squishies.length)] ?? heroes[0];
+        if (newTarget && newTarget.uid !== enemy.targetUnitUid) {
+          enemy.targetUnitUid = newTarget.uid;
+          target = newTarget;
+          this.addText(enemy.x, enemy.y - 9, '⚠️ AGGRO RESET!', '#fbbf24', false);
+        }
+      }
+    }
+
+    // 4. Initial / fallback target acquisition: distribute across party & prioritize last attacker or squishies if untanked!
+    if (!target) {
+      const lastAttacker = heroes.find((h) => h.uid === enemy.lastAttackerUid);
+      if (lastAttacker) {
+        target = lastAttacker;
+      } else {
+        const squishies = heroes.filter((h) => h.role !== 'tank');
+        const enemyNum = Number(enemy.uid.replace(/\D/g, '')) || 0;
+        // Fast flankers and secondary wave spawns hunt your Rogue, Wizard, or Cleric unless intercepted by your Tank!
+        if (
+          squishies.length > 0 &&
+          (enemyNum % 2 === 1 ||
+            enemy.enemyId === 'dire-wolf' ||
+            enemy.enemyId === 'mini-slime' ||
+            enemy.enemyId === 'goblin-archer')
+        ) {
+          target = squishies[enemyNum % squishies.length];
+        } else {
+          target = [...heroes].sort((a, b) => this.dist(enemy, a) - this.dist(enemy, b))[0];
+        }
+      }
+      enemy.targetUnitUid = target?.uid ?? null;
+    }
+
+    if (!target) return;
 
     const d = this.dist(enemy, target);
     enemy.facing = target.x >= enemy.x ? 'right' : 'left';
@@ -1050,9 +1156,22 @@ export class CombatService implements OnDestroy {
   ): void {
     if (target.invulnerableTimer > 0 || target.hp <= 0) return;
 
-    // Percentage armor mitigation (prevents early high-defense tanks from taking 1 damage)
-    const mitigation = 100 / (100 + Math.max(0, target.defense) * 3.5);
-    let dmg = Math.max(2, Math.round(rawAmount * mitigation));
+    // "Use Your Tank or Everybody Dies" Mitigation:
+    // Tanks wear heavy plate and mitigate physical blows; non-tank squishies take 1.55x unshielded damage!
+    let dmg: number;
+    if (target.isHero) {
+      if (target.role === 'tank') {
+        const mitigation = 100 / (100 + Math.max(0, target.defense) * 5.8);
+        dmg = Math.max(2, Math.round(rawAmount * mitigation));
+      } else {
+        const mitigation = 100 / (100 + Math.max(0, target.defense) * 1.8);
+        dmg = Math.max(5, Math.round(rawAmount * 1.55 * mitigation));
+      }
+    } else {
+      const mitigation = 100 / (100 + Math.max(0, target.defense) * 3.5);
+      dmg = Math.max(2, Math.round(rawAmount * mitigation));
+    }
+
     if (target.shieldTimer > 0) {
       dmg = Math.max(1, Math.round(dmg * 0.35));
     }
@@ -1069,6 +1188,28 @@ export class CombatService implements OnDestroy {
       if (attacker.poisonDps > 0 && !target.isHero) {
         target.poisonTimer = 4;
         target.poisonDps = Math.max(2, Math.round(attacker.attack * 0.32));
+      }
+
+      // Hit-Driven Aggro ("Whoever hits them last" + Tank Hold):
+      if (attacker.isHero && !target.isHero && target.hp > 0) {
+        target.lastAttackerUid = attacker.uid;
+        if (attacker.role === 'tank') {
+          // Tank melee strike holds this specific enemy's attention for 3.2s
+          target.targetUnitUid = attacker.uid;
+          target.tankHoldTimer = Math.max(target.tankHoldTimer ?? 0, 3.2);
+          target.aggroResetTimer = Math.max(target.aggroResetTimer ?? 0, 5.8);
+        } else {
+          const tankHold = target.tankHoldTimer ?? 0;
+          // If no Tank is actively holding this enemy, OR if DPS lands a big crit/burst while not hard-taunted, enemy turns on the attacker!
+          if (tankHold <= 0 || (isCrit && tankHold < 3.5 && Math.random() < 0.55)) {
+            const switched = target.targetUnitUid !== attacker.uid;
+            target.tankHoldTimer = 0;
+            target.targetUnitUid = attacker.uid;
+            if (switched) {
+              this.addText(attacker.x, attacker.y - 9, '⚠️ AGGRO!', '#ef4444', true);
+            }
+          }
+        }
       }
     }
 
@@ -1097,6 +1238,7 @@ export class CombatService implements OnDestroy {
   ): void {
     const p: Projectile = {
       id: `proj-${this.uidCounter++}`,
+      sourceUid: from.uid,
       fromHero: from.isHero,
       x: from.x,
       y: from.y - 3,

@@ -1331,6 +1331,13 @@
       0 6px 16px rgba(0, 0, 0, 0.85);
     transform: scale(1.04);
   }
+
+  &.has-aggro-danger {
+    border-color: #ef4444 !important;
+    box-shadow:
+      0 0 0 2px #ef4444,
+      0 0 14px rgba(239, 68, 68, 0.75);
+  }
 }
 
 .bh-portrait-img {
@@ -1518,7 +1525,8 @@
 }
 
 .marching-command-line,
-.marching-heal-beam {
+.marching-heal-beam,
+.enemy-aggro-line {
   animation: bh-march 0.95s linear infinite;
 }
 
@@ -1707,6 +1715,27 @@
 .status-icons {
   font-size: 0.75rem;
   min-height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.aggro-danger-pill {
+  background-color: #dc2626;
+  color: #ffffff;
+  font-size: 0.58rem;
+  font-weight: 900;
+  padding: 0 5px;
+  border-radius: 99px;
+  border: 1px solid #fef08a;
+  white-space: nowrap;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.85);
+}
+
+.taunt-lock-pill {
+  font-size: 0.72rem;
+  filter: drop-shadow(0 0 4px #38bdf8);
 }
 
 .hp-track {

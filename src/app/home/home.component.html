@@ -904,6 +904,7 @@
               type="button"
               class="bh-portrait-badge"
               [class.selected]="combat.selectedHeroUid() === hero.uid"
+              [class.has-aggro-danger]="combat.squishyTargetedUids().has(hero.uid)"
               [style.borderColor]="hero.accentColor"
               (pointerdown)="$event.stopPropagation()"
               (click)="combat.selectHero(hero.uid)"
@@ -994,6 +995,22 @@
               fill="rgba(239, 68, 68, 0.36)"
               [attr.stroke]="tel.color"
               stroke-width="0.4"
+            />
+          }
+
+          <!-- Enemy Aggro Danger Tethers (Alerts when an Enemy is hunting a Non-Tank Squishy!) -->
+          @for (ag of combat.enemyAggroLines(); track ag.id) {
+            <line
+              class="enemy-aggro-line"
+              [attr.x1]="ag.x1"
+              [attr.y1]="ag.y1"
+              [attr.x2]="ag.x2"
+              [attr.y2]="ag.y2"
+              stroke="#ef4444"
+              stroke-width="0.65"
+              stroke-dasharray="1.4 1.4"
+              opacity="0.72"
+              stroke-linecap="round"
             />
           }
 
@@ -1182,6 +1199,12 @@
             <!-- Overhead HP Bar & Status Badges -->
             <div class="unit-overhead">
               <div class="status-icons">
+                @if (unit.isHero && combat.squishyTargetedUids().has(unit.uid)) {
+                  <span class="aggro-danger-pill">⚠️ AGGRO!</span>
+                }
+                @if (!unit.isHero && (unit.tankHoldTimer ?? 0) > 0) {
+                  <span class="taunt-lock-pill" title="Taunted by Tank">🛡️</span>
+                }
                 @if (unit.shieldTimer > 0) {
                   <span>🛡️</span>
                 }

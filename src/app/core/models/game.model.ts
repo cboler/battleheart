@@ -255,6 +255,11 @@ export interface CombatUnit {
   attackAnimTimer: number;
   hurtAnimTimer: number;
   isMoving?: boolean;
+
+  // Per-enemy Battleheart Aggro & Tank Hold tracking
+  tankHoldTimer?: number;
+  aggroResetTimer?: number;
+  lastAttackerUid?: string | null;
 }
 
 export interface ArenaTelegraphEffect {
@@ -284,6 +289,7 @@ export interface ArenaHazardZone {
 
 export interface Projectile {
   id: string;
+  sourceUid?: string;
   fromHero: boolean;
   x: number;
   y: number;
