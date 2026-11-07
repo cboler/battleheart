@@ -19,6 +19,13 @@ A tactical real-time line-drawing party RPG inspired by the original 2011 _Battl
 - **Swappable SVG Art Pipeline**: All character and stage sprites live in `public/assets/svg/` (`heroes/*.svg`, `enemies/*.svg`, `backdrops/*.svg`) with a clean `0 0 120 120` viewBox so you can replace any placeholder SVG with your own custom artwork at any time.
 - **Local Saves & Controller Support**: 3 local save slots with JSON import/export backup, keyboard hotkeys (`1`–`4`, `Q`/`W`, `Space`), and full standard Gamepad support (`LB`/`RB` to cycle heroes, stick + `A` to issue commands, `X`/`Y` for skills).
 
+## Credits, Preservation & Disclaimer
+
+This repository is an **unofficial, non-commercial fan recreation** of the original _Battleheart_ (2011), created by **Mika Mobile** (Noah Bordner & Kelly Reagan). All credit for the original game concept, class design, and line-drawing RPG mechanics belongs to **Mika Mobile**. Please support their work directly by purchasing [**Battleheart Legacy on Steam**](https://store.steampowered.com/app/666640/Battleheart_Legacy/).
+
+- **Why this exists**: The original 2011 _Battleheart_ is no longer maintained or available on Google Play, and searching for it today mostly turns up untrustworthy, malware-ridden third-party APK sites. This clean-room web version (written from scratch in TypeScript with synthesized Web Audio and placeholder SVG graphics) was built for family nostalgia and game preservation so it can be played safely in a browser.
+- **Non-Commercial & Takedown Policy**: No money is made from this project (zero ads, zero monetization, zero tracking), and no original code or binary assets from Mika Mobile are included. We are happy to modify, rename, or take this repository down immediately upon request by Mika Mobile or the rights holders.
+
 ## Development & Verification
 
 ```bash

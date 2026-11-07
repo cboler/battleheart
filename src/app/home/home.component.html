@@ -121,6 +121,17 @@
         >
           💾 Saves &amp; Art
         </button>
+        <button
+          type="button"
+          role="tab"
+          id="tab-about"
+          class="hub-tab"
+          [class.active]="activeTab() === 'about'"
+          [attr.aria-selected]="activeTab() === 'about'"
+          (click)="setTab('about')"
+        >
+          ℹ️ About &amp; Credits
+        </button>
       </div>
     </section>
 
@@ -511,6 +522,61 @@
             <a routerLink="/status" class="btn-secondary" id="view-status-btn">
               🔍 Open PWA Runtime &amp; Routing Diagnostics
             </a>
+          </div>
+        </div>
+      </section>
+    }
+
+    <!-- TAB 6: ABOUT, CREDITS & PRESERVATION DISCLAIMER -->
+    @if (activeTab() === 'about') {
+      <section class="hub-panel" aria-label="About and Preservation Disclaimer">
+        <div class="about-card">
+          <h3>❤️ Tribute, Credits &amp; Preservation Disclaimer</h3>
+          <p>
+            This project is an unofficial, non-commercial fan recreation of the original
+            <strong>Battleheart</strong> (2011), created by <strong>Mika Mobile</strong> (Noah
+            Bordner &amp; Kelly Reagan). All credit for the original game concept, class mechanics,
+            and tactical line-drawing RPG magic belongs to <strong>Mika Mobile</strong>.
+          </p>
+          <p>
+            If you enjoy their work, please support Mika Mobile directly by purchasing
+            <a
+              href="https://store.steampowered.com/app/666640/Battleheart_Legacy/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <strong>Battleheart Legacy on Steam</strong>
+            </a>
+            and checking out their other titles!
+          </p>
+
+          <div class="disclaimer-callout">
+            <h4>🛡️ Why This Exists (Game Preservation &amp; Safety)</h4>
+            <p>
+              Because the original 2011 <em>Battleheart</em> is no longer maintained or available on
+              modern Google Play devices, searching for ways to replay it with family today mostly
+              leads to sketchy, malware-ridden third-party APK download sites.
+            </p>
+            <p>
+              This clean-room web recreation—built from scratch with original TypeScript code,
+              synthesized Web Audio, and custom placeholder SVG graphics—was made purely out of
+              father-and-son nostalgia and a love for preserving classic games so they can be played
+              safely in a browser without risking device security.
+            </p>
+          </div>
+
+          <div class="disclaimer-callout takedown-note">
+            <h4>⚖️ Non-Commercial &amp; Takedown Policy</h4>
+            <p>
+              This project is <strong>100% free and non-commercial</strong>: there are no ads, no
+              monetization, no tracking, and no original binary assets or code from Mika Mobile are
+              distributed here.
+            </p>
+            <p>
+              We respect the original creators completely and are
+              <strong>glad to modify, rename, or take this repository down immediately</strong> if
+              requested by Mika Mobile or the rights holders.
+            </p>
           </div>
         </div>
       </section>

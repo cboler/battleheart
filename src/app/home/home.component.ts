@@ -18,7 +18,7 @@ import { CombatService } from '../core/services/combat.service';
 import { GameStateService } from '../core/services/game-state.service';
 import { GamepadService } from '../core/services/gamepad.service';
 
-export type HubTab = 'map' | 'tavern' | 'armory' | 'academy' | 'saves';
+export type HubTab = 'map' | 'tavern' | 'armory' | 'academy' | 'saves' | 'about';
 
 @Component({
   selector: 'app-home',

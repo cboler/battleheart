@@ -34,6 +34,11 @@ test.describe('Battleheart Responsive Shell & Gameplay Smoke Tests', () => {
     await page.locator('#tab-tavern').click();
     await expect(page.locator('.hero-card')).toHaveCount(8);
 
+    // 4b. Switch to About & Credits tab and verify Mika Mobile attribution & disclaimer
+    await page.locator('#tab-about').click();
+    await expect(page.locator('.about-card')).toContainText('Mika Mobile');
+    await expect(page.locator('.about-card')).toContainText('non-commercial');
+
     // 5. Switch to Map tab and launch Stage 1 Battle
     await page.locator('#tab-map').click();
     await page.locator('#start-stage-1').click();
