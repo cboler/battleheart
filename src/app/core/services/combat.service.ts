@@ -9,6 +9,7 @@ import {
   FloatingText,
   Projectile,
   StageDefinition,
+  WarChestLoot,
 } from '../models/game.model';
 import { AudioService } from './audio.service';
 import { GameStateService } from './game-state.service';
@@ -47,6 +48,7 @@ export class CombatService implements OnDestroy {
     bonusLootName: string;
     droppedRelicName: string | null;
     unlockedHeroName: string | null;
+    warChest: WarChestLoot | null;
   } | null>(null);
 
   public readonly heroes = computed(() => this.units().filter((u) => u.isHero));
@@ -60,12 +62,16 @@ export class CombatService implements OnDestroy {
     const beams: { id: string; x1: number; y1: number; x2: number; y2: number }[] = [];
     for (const h of allies) {
       if (h.role !== 'healer' || h.stunTimer > 0) continue;
-      let target = allies.find((a) => a.uid === h.targetUnitUid);
+      let target = allies.find((a) => a.uid === h.targetUnitUid && a.hp < a.maxHp);
       if (!target) {
         const injured = [...allies]
           .filter((a) => a.hp < a.maxHp)
           .sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp);
-        target = injured[0];
+        target =
+          injured[0] ??
+          allies.find((a) => a.uid === h.targetUnitUid) ??
+          allies.find((a) => a.role === 'tank') ??
+          allies[0];
       }
       if (target) {
         beams.push({
@@ -117,6 +123,7 @@ export class CombatService implements OnDestroy {
   private waveElapsedSec = 0;
 
   public startBattle(stage: StageDefinition): void {
+    this.openWarChest();
     this.stopLoop();
     this.activeStage.set(stage);
     this.outcome.set('ongoing');
@@ -133,6 +140,7 @@ export class CombatService implements OnDestroy {
 
     // Spawn Party Heroes on left side of arena
     const party = this.gameState.partyHeroes();
+    const primaryTank = party.find((p) => p.def.role === 'tank') ?? party[0];
     const startPositions = [
       { x: 26, y: 58 }, // Front-top (Tank)
       { x: 14, y: 50 }, // Back-top (Healer)
@@ -178,12 +186,16 @@ export class CombatService implements OnDestroy {
         x: pos.x,
         y: pos.y,
         facing: 'right',
-        targetUnitUid: h.def.role === 'healer' && party[0] ? `hero-${party[0].def.id}` : null,
+        targetUnitUid:
+          h.def.role === 'healer' && primaryTank && primaryTank.def.id !== h.def.id
+            ? `hero-${primaryTank.def.id}`
+            : null,
         moveDestination: null,
         maxHp: h.maxHp,
         hp: h.maxHp,
         attack: h.attack,
         defense: h.defense,
+        precision: 0.25,
         attackRange: h.def.attackRange,
         attackIntervalSec: h.attackIntervalSec,
         attackTimer: 0.4,
@@ -229,7 +241,18 @@ export class CombatService implements OnDestroy {
     }
   }
 
+  public openWarChest(): void {
+    const summary = this.lastRewardSummary();
+    if (!summary?.warChest || summary.warChest.opened) return;
+    const claimed = this.gameState.claimWarChestLoot(summary.warChest);
+    this.lastRewardSummary.set({
+      ...summary,
+      warChest: claimed,
+    });
+  }
+
   public stopBattle(): void {
+    this.openWarChest();
     this.stopLoop();
     this.isRunning.set(false);
     this.activeStage.set(null);
@@ -744,7 +767,7 @@ export class CombatService implements OnDestroy {
             const attacker =
               allUnits.find((u) => u.uid === proj.sourceUid) ??
               allUnits.find((u) => u.isHero === proj.fromHero);
-            this.applyDamage(attacker ?? null, target, proj.value, false);
+            this.applyDamage(attacker ?? null, target, proj.value, false, true);
           }
         }
       } else {
@@ -936,11 +959,15 @@ export class CombatService implements OnDestroy {
       const allies = allUnits.filter((u) => u.isHero && u.hp > 0);
       let healTarget = allies.find((a) => a.uid === hero.targetUnitUid && a.hp < a.maxHp);
       if (!healTarget) {
-        // Auto-select most injured ally
+        // Auto-select most injured ally, or stay focused on locked target / primary Tank
         const injured = allies
           .filter((a) => a.hp < a.maxHp)
           .sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp);
-        healTarget = injured[0] ?? allies.find((a) => a.uid === hero.targetUnitUid) ?? allies[0];
+        healTarget =
+          injured[0] ??
+          allies.find((a) => a.uid === hero.targetUnitUid) ??
+          allies.find((a) => a.role === 'tank') ??
+          allies[0];
       }
 
       if (healTarget) {
@@ -1101,7 +1128,8 @@ export class CombatService implements OnDestroy {
       }
     }
 
-    // 4. Initial / fallback target acquisition: distribute across party & prioritize last attacker or squishies if untanked!
+    // 4. Initial / fallback target acquisition:
+    // Both Knight and Monk must actively intercept or use their Taunt skill—untanked enemies hunt non-tank squishies first!
     if (!target) {
       const lastAttacker = heroes.find((h) => h.uid === enemy.lastAttackerUid);
       if (lastAttacker) {
@@ -1109,14 +1137,7 @@ export class CombatService implements OnDestroy {
       } else {
         const squishies = heroes.filter((h) => h.role !== 'tank');
         const enemyNum = Number(enemy.uid.replace(/\D/g, '')) || 0;
-        // Fast flankers and secondary wave spawns hunt your Rogue, Wizard, or Cleric unless intercepted by your Tank!
-        if (
-          squishies.length > 0 &&
-          (enemyNum % 2 === 1 ||
-            enemy.enemyId === 'dire-wolf' ||
-            enemy.enemyId === 'mini-slime' ||
-            enemy.enemyId === 'goblin-archer')
-        ) {
+        if (squishies.length > 0) {
           target = squishies[enemyNum % squishies.length];
         } else {
           target = [...heroes].sort((a, b) => this.dist(enemy, a) - this.dist(enemy, b))[0];
@@ -1274,6 +1295,7 @@ export class CombatService implements OnDestroy {
     target: CombatUnit,
     rawAmount: number,
     isCrit: boolean,
+    isProjectile = false,
   ): void {
     if (target.invulnerableTimer > 0 || target.hp <= 0) return;
 
@@ -1281,25 +1303,27 @@ export class CombatService implements OnDestroy {
     const effectiveRaw =
       attacker && attacker.weakenTimer > 0 ? Math.round(rawAmount * 0.65) : rawAmount;
 
-    // Dodge Tank & Evasion Mechanic (Monk Wind Stance, Rogue agility, Zephyr Greaves):
+    // Dodge Tank & Evasion Mechanic (Opposed by Enemy Precision / Aim, capped at 75% effective dodge):
     if (target.isHero && (!attacker || !attacker.isHero)) {
-      const totalDodge = Math.min(
-        0.85,
-        (target.dodgeChance ?? 0) + (target.evasionTimer > 0 ? 0.52 : 0),
-      );
-      if (totalDodge > 0 && Math.random() < totalDodge) {
+      const rawDodge = (target.dodgeChance ?? 0) + (target.evasionTimer > 0 ? 0.35 : 0);
+      const enemyPrecision = attacker?.precision ?? 0.1;
+      const effectiveDodge = Math.max(0, Math.min(0.75, rawDodge - enemyPrecision));
+      const roll = Math.random();
+      if (effectiveDodge > 0 && roll < effectiveDodge) {
         if (attacker && target.role === 'tank') {
           attacker.targetUnitUid = target.uid;
           attacker.tankHoldTimer = Math.max(attacker.tankHoldTimer ?? 0, 3.8);
           attacker.aggroResetTimer = Math.max(attacker.aggroResetTimer ?? 0, 5.8);
         }
         this.addText(target.x, target.y - 7, '💨 DODGE!', '#38bdf8', false);
-        // Monk Dodge Tank Counter-Attack!
+        // Monk Dodge Tank Counter-Attack (STRICTLY melee-only: cannot counter-punch projectiles or ranged archers!):
         if (
+          !isProjectile &&
           attacker &&
           attacker.hp > 0 &&
+          attacker.attackRange <= 16 &&
           (target.counterOnDodge || target.evasionTimer > 0) &&
-          this.dist(target, attacker) <= 18
+          this.dist(target, attacker) <= target.attackRange + 3
         ) {
           target.attackAnimTimer = 0.22;
           const counterDmg = Math.max(
@@ -1311,6 +1335,8 @@ export class CombatService implements OnDestroy {
           this.addText(attacker.x, attacker.y - 8, `⚡ COUNTER -${counterDmg}!`, '#fb923c', true);
         }
         return;
+      } else if (rawDodge >= 0.25 && roll < rawDodge) {
+        this.addText(target.x, target.y - 10, '🎯 PRECISION HIT!', '#fbbf24', false);
       }
     }
 
@@ -1497,6 +1523,10 @@ export class CombatService implements OnDestroy {
       hp: Math.round(def.maxHp * waveScale),
       attack: Math.round(def.attack * waveScale),
       defense: def.defense,
+      precision: Math.min(
+        0.4,
+        (def.precision ?? 0.1) + (stage?.isArena ? this.waveIndex() * 0.015 : 0),
+      ),
       attackRange: def.attackRange,
       attackIntervalSec: def.attackIntervalSec,
       attackTimer: 0.6 + (offsetIdx % 3) * 0.25,
@@ -1553,6 +1583,7 @@ export class CombatService implements OnDestroy {
         bonusLootName: stage.isArena ? 'Colosseum Valor Purse' : 'Retreat Salvage Pouch',
         droppedRelicName: res.droppedRelicName,
         unlockedHeroName: res.unlockedHeroName,
+        warChest: null,
       });
       return;
     }
@@ -1592,6 +1623,7 @@ export class CombatService implements OnDestroy {
           bonusLootName: spoilsPool[(stage.index - 1) % spoilsPool.length] ?? spoilsPool[0],
           droppedRelicName: res.droppedRelicName,
           unlockedHeroName: res.unlockedHeroName,
+          warChest: res.warChest,
         });
       }
     }

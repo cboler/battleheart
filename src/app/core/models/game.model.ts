@@ -162,6 +162,7 @@ export interface EnemyDefinition {
   maxHp: number;
   attack: number;
   defense: number;
+  precision?: number; // Opposes Hero Dodge Chance (e.g., 0.08 to 0.32)
   attackRange: number;
   attackIntervalSec: number;
   moveSpeed: number;
@@ -172,6 +173,19 @@ export interface EnemyDefinition {
   specialAbility?:
     'ground-slam' | 'petrify-gaze' | 'fire-breath' | 'dark-mend' | 'enrage' | 'acid-pool';
   specialIntervalSec?: number;
+}
+
+export interface WarChestLoot {
+  chestTitle: string;
+  opened: boolean;
+  lootIcon: string;
+  lootTitle: string;
+  lootDetail: string;
+  bonusGold: number;
+  bonusXp: number;
+  upgradedHeroId?: HeroClassId;
+  upgradeType?: 'weapon' | 'armor';
+  unlockedTrinketId?: string;
 }
 
 export interface WaveSpawn {
@@ -238,6 +252,7 @@ export interface CombatUnit {
   attack: number;
   defense: number;
   dodgeChance: number;
+  precision: number;
   attackRange: number;
   attackIntervalSec: number;
   attackTimer: number;

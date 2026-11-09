@@ -513,7 +513,12 @@
                   {{ hero.attack }}
                 </div>
                 <div><strong>Defense:</strong> {{ hero.defense }}</div>
-                <div><strong>Dodge Chance:</strong> {{ (hero.dodgeChance * 100).toFixed(0) }}%</div>
+                <div
+                  title="Passive Dodge is capped at 50%; Active Evasion is opposed by Enemy Precision (8%–32%) and capped at 75%."
+                >
+                  <strong>Dodge:</strong> {{ (hero.dodgeChance * 100).toFixed(0) }}%
+                  <small>(vs 🎯 Enemy Precision)</small>
+                </div>
               </div>
 
               <!-- Dual Equipped Trinket Slots (Classic Battleheart 2-Slot Loadout) -->
@@ -1375,15 +1380,42 @@
             (pointerdown)="$event.stopPropagation()"
           >
             <div class="outcome-card">
-              <h2>
-                {{ combat.outcome() === 'victory' ? '🏆 Victory!' : '💀 Party Fallen' }}
-              </h2>
+              <div class="outcome-header-row">
+                <h2>
+                  {{ combat.outcome() === 'victory' ? '🏆 Victory!' : '💀 Party Fallen' }}
+                </h2>
+                @if (combat.lastRewardSummary(); as reward) {
+                  @if (reward.stars > 0) {
+                    <div class="stars-display">{{ '⭐'.repeat(reward.stars) }}</div>
+                  }
+                }
+              </div>
               @if (combat.lastRewardSummary(); as reward) {
-                @if (combat.outcome() === 'victory') {
-                  <div class="spoils-chest-box" aria-hidden="true">
-                    <span class="chest-icon">🧰</span>
-                    <span class="chest-name">{{ reward.bonusLootName }}</span>
-                  </div>
+                <p class="reward-line">
+                  Spoils of War: <strong>🪙 +{{ reward.gold }} Gold</strong> &amp;
+                  <strong>✨ +{{ reward.xp }} XP</strong>
+                </p>
+                @if (combat.outcome() === 'victory' && reward.warChest; as chest) {
+                  @if (!chest.opened) {
+                    <button
+                      type="button"
+                      id="open-war-chest-btn"
+                      class="spoils-chest-box is-openable"
+                      (click)="combat.openWarChest()"
+                    >
+                      <span class="chest-icon">🧰</span>
+                      <span class="chest-name">{{ chest.chestTitle }}</span>
+                      <span class="chest-cta">🔓 Tap to Open!</span>
+                    </button>
+                  } @else {
+                    <div class="spoils-chest-box is-opened" id="opened-war-chest-banner">
+                      <span class="chest-icon">🎁</span>
+                      <div class="chest-loot-details">
+                        <strong>{{ chest.lootIcon }} {{ chest.lootTitle }}</strong>
+                        <span>{{ chest.lootDetail }}</span>
+                      </div>
+                    </div>
+                  }
                 }
                 @if (reward.unlockedHeroName) {
                   <div class="bis-drop-banner">
@@ -1397,13 +1429,6 @@
                     >!
                   </div>
                 }
-                @if (reward.stars > 0) {
-                  <div class="stars-display">{{ '⭐'.repeat(reward.stars) }}</div>
-                }
-                <p class="reward-line">
-                  Spoils of War: <strong>🪙 +{{ reward.gold }} Gold</strong> &amp;
-                  <strong>✨ +{{ reward.xp }} XP</strong>
-                </p>
                 @if (reward.leveledUpHeroes.length > 0) {
                   <div class="levelup-banner">
                     🎉 Level Up: {{ reward.leveledUpHeroes.join(', ') }}!

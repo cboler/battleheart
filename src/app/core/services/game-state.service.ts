@@ -14,6 +14,7 @@ import {
   SkillChoice,
   SkillDefinition,
   StageDefinition,
+  WarChestLoot,
 } from '../models/game.model';
 import { AudioService } from './audio.service';
 import { StorageService } from './storage.service';
@@ -82,9 +83,18 @@ export class GameStateService {
     return this.allHeroIds.map((id) => this.computeHeroStats(id, p.heroes[id]));
   });
 
-  public readonly partyHeroes = computed<ComputedHeroStats[]>(() =>
-    this.roster().filter((h) => h.save.unlocked && h.save.inParty),
-  );
+  public readonly partyHeroes = computed<ComputedHeroStats[]>(() => {
+    const rolePriority: Record<string, number> = {
+      tank: 0,
+      healer: 1,
+      'melee-dps': 2,
+      'ranged-dps': 3,
+      support: 4,
+    };
+    return this.roster()
+      .filter((h) => h.save.unlocked && h.save.inParty)
+      .sort((a, b) => (rolePriority[a.def.role] ?? 5) - (rolePriority[b.def.role] ?? 5));
+  });
 
   public readonly stages = computed(() => {
     const completed = new Set(this.profile().completedStageIds);
@@ -338,6 +348,7 @@ export class GameStateService {
     leveledUpHeroes: string[];
     droppedRelicName: string | null;
     unlockedHeroName: string | null;
+    warChest: WarChestLoot | null;
   } {
     const p = this.profile();
     const updatedHeroes = { ...p.heroes };
@@ -410,7 +421,136 @@ export class GameStateService {
       heroes: updatedHeroes,
     });
 
-    return { leveledUpHeroes, droppedRelicName, unlockedHeroName };
+    const warChest = stars > 0 ? this.rollWarChestLoot(stage) : null;
+    return { leveledUpHeroes, droppedRelicName, unlockedHeroName, warChest };
+  }
+
+  /**
+   * Generates a real, openable War Chest reward upon stage victory!
+   * Prioritizes a free Weapon/Armor tier upgrade for an active party hero or an unowned Merchant Trinket,
+   * and falls back to a Royal Gemstone / Valor Tome cache with bonus Gold & XP.
+   */
+  public rollWarChestLoot(stage: StageDefinition): WarChestLoot {
+    const spoilsPool = [
+      "King's Gilded War Chest",
+      'Mithril-Bound Spoils Coffer',
+      "Goblin Chieftain's Hoard",
+      'Sunforged Relic Strongbox',
+      'Dragonscale Treasury Chest',
+    ];
+    const chestTitle = spoilsPool[(stage.index - 1) % spoilsPool.length] ?? spoilsPool[0];
+    const p = this.profile();
+    const maxGearTier = Math.min(6, this.unlockedGearTier());
+    const clearedIdx = this.highestClearedStageIndex();
+
+    const activeIds = this.allHeroIds.filter((id) => p.heroes[id].unlocked && p.heroes[id].inParty);
+
+    // 1. Check if an active party hero can receive a Weapon or Armor upgrade from the chest
+    for (const id of activeIds) {
+      const hSave = p.heroes[id];
+      const hDef = HERO_CATALOG[id];
+      if (hSave.weaponTier < maxGearTier) {
+        const nextTier = hSave.weaponTier + 1;
+        const itemName = hDef.weaponNames[nextTier - 1] ?? `Tier ${nextTier} Weapon`;
+        return {
+          chestTitle,
+          opened: false,
+          lootIcon: '⚔️',
+          lootTitle: itemName,
+          lootDetail: `${hDef.name}'s Weapon upgraded to Tier ${nextTier} for free!`,
+          bonusGold: 25,
+          bonusXp: 20,
+          upgradedHeroId: id,
+          upgradeType: 'weapon',
+        };
+      }
+      if (hSave.armorTier < maxGearTier) {
+        const nextTier = hSave.armorTier + 1;
+        const itemName = hDef.armorNames[nextTier - 1] ?? `Tier ${nextTier} Armor`;
+        return {
+          chestTitle,
+          opened: false,
+          lootIcon: '🛡️',
+          lootTitle: itemName,
+          lootDetail: `${hDef.name}'s Armor upgraded to Tier ${nextTier} for free!`,
+          bonusGold: 25,
+          bonusXp: 20,
+          upgradedHeroId: id,
+          upgradeType: 'armor',
+        };
+      }
+    }
+
+    // 2. Check if there is an unlocked Merchant Trinket not yet owned
+    const unownedTrinket = TRINKET_CATALOG.find(
+      (t) => !t.isBestInSlot && t.unlockStageIndex <= clearedIdx && !p.ownedTrinkets.includes(t.id),
+    );
+    if (unownedTrinket) {
+      return {
+        chestTitle,
+        opened: false,
+        lootIcon: unownedTrinket.icon,
+        lootTitle: unownedTrinket.name,
+        lootDetail: `Relic unlocked in Armory (${unownedTrinket.description})!`,
+        bonusGold: 30,
+        bonusXp: 25,
+        unlockedTrinketId: unownedTrinket.id,
+      };
+    }
+
+    // 3. Fallback: Royal Gemstone & Valor Cache (grants immediate bonus Gold & Party XP!)
+    const bonusGold = Math.max(45, Math.round(stage.goldReward * 0.45));
+    const bonusXp = Math.max(35, Math.round(stage.xpReward * 0.45));
+    return {
+      chestTitle,
+      opened: false,
+      lootIcon: '💎',
+      lootTitle: 'Royal Gemstone & Valor Cache',
+      lootDetail: `+${bonusGold} Bonus Gold & +${bonusXp} Bonus Party XP!`,
+      bonusGold,
+      bonusXp,
+    };
+  }
+
+  public claimWarChestLoot(loot: WarChestLoot): WarChestLoot {
+    if (loot.opened) return loot;
+    const p = this.profile();
+    const updatedHeroes = { ...p.heroes };
+    const nextOwnedTrinkets = [...p.ownedTrinkets];
+
+    if (loot.upgradedHeroId && updatedHeroes[loot.upgradedHeroId]) {
+      const h = updatedHeroes[loot.upgradedHeroId];
+      if (loot.upgradeType === 'weapon' && h.weaponTier < 7) {
+        updatedHeroes[loot.upgradedHeroId] = { ...h, weaponTier: h.weaponTier + 1 };
+      } else if (loot.upgradeType === 'armor' && h.armorTier < 7) {
+        updatedHeroes[loot.upgradedHeroId] = { ...h, armorTier: h.armorTier + 1 };
+      }
+    }
+
+    if (loot.unlockedTrinketId && !nextOwnedTrinkets.includes(loot.unlockedTrinketId)) {
+      nextOwnedTrinkets.push(loot.unlockedTrinketId);
+    }
+
+    for (const id of this.allHeroIds) {
+      const h = updatedHeroes[id];
+      if (!h.unlocked || !h.inParty) continue;
+      let level = h.level;
+      let xp = h.xp + loot.bonusXp;
+      while (level < 20 && xp >= this.xpForNextLevel(level)) {
+        xp -= this.xpForNextLevel(level);
+        level += 1;
+      }
+      updatedHeroes[id] = { ...h, level, xp };
+    }
+
+    this.commitProfile({
+      ...p,
+      gold: p.gold + loot.bonusGold,
+      ownedTrinkets: nextOwnedTrinkets,
+      heroes: updatedHeroes,
+    });
+    this.audio.playCoin();
+    return { ...loot, opened: true };
   }
 
   public computeHeroStats(classId: HeroClassId, save: HeroSaveState): ComputedHeroStats {
@@ -466,9 +606,9 @@ export class GameStateService {
           defense += 5;
           break;
         case 'iron-body':
-          // Monk's Phantom Reflexes: +15% permanent Dodge Chance, +20% Max HP & counter-attack on dodge
+          // Monk's Phantom Reflexes: +12% permanent Dodge Chance, +20% Max HP & counter-attack on melee dodge
           maxHp *= 1.2;
-          dodgeChance += 0.15;
+          dodgeChance += 0.12;
           counterOnDodge = true;
           break;
         case 'mana-barrier':
@@ -569,7 +709,7 @@ export class GameStateService {
       attackIntervalSec: Number(attackIntervalSec.toFixed(2)),
       moveSpeed: Math.round(moveSpeed),
       critChance: Number(critChance.toFixed(2)),
-      dodgeChance: Math.min(0.65, Number(dodgeChance.toFixed(2))),
+      dodgeChance: Math.min(0.5, Number(dodgeChance.toFixed(2))),
       counterOnDodge,
       lifesteal: Number(lifesteal.toFixed(2)),
       cooldownMultiplier: Number(cooldownMultiplier.toFixed(2)),

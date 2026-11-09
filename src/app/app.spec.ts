@@ -268,6 +268,87 @@ describe('Battleheart Application & Core Mechanics Tests', () => {
 
       combat.stopBattle();
     });
+
+    it('should place Monk in front-line Tank slot and have Healer auto-target Monk when Knight is swapped out', () => {
+      const state = TestBed.inject(GameStateService);
+      state.awardBattleRewards(STAGE_CATALOG[0], 500, 100, 3);
+      state.awardBattleRewards(STAGE_CATALOG[1], 500, 100, 3);
+      expect(state.hireHero('monk')).toBe(true);
+      // Swap out Knight so Monk is the sole Tank in the party
+      expect(state.toggleHeroInParty('knight')).toBe(true);
+
+      const combat = TestBed.inject(CombatService);
+      combat.startBattle(STAGE_CATALOG[0]);
+
+      const monk = combat.heroes().find((h) => h.classId === 'monk')!;
+      const cleric = combat.heroes().find((h) => h.classId === 'cleric')!;
+      expect(cleric.targetUnitUid).toBe(monk.uid);
+      expect(combat.healerBeams()[0]?.x2).toBe(monk.x);
+
+      combat.stopBattle();
+    });
+
+    it('should never counter-punch ranged archers or projectiles when Monk dodges, only melee attackers in range', () => {
+      const state = TestBed.inject(GameStateService);
+      state.awardBattleRewards(STAGE_CATALOG[0], 500, 100, 3);
+      state.awardBattleRewards(STAGE_CATALOG[1], 500, 100, 3);
+      expect(state.hireHero('monk')).toBe(true);
+
+      const combat = TestBed.inject(CombatService);
+      combat.startBattle(STAGE_CATALOG[1]); // Stage 2 has Goblin Sniper ('goblin-archer')
+      for (let i = 0; i < 10; i++) {
+        combat.step(0.1); // Advance 1.0s (clamped to 0.1s per step) to spawn delayed archer
+      }
+
+      const monk = combat.heroes().find((h) => h.classId === 'monk')!;
+      const archer = combat.enemies().find((e) => e.enemyId === 'goblin-archer')!;
+      expect(archer).toBeTruthy();
+      const initialArcherHp = archer.hp;
+
+      // Give Monk max dodge and spawn an incoming arrow projectile from the archer
+      combat.units.update((list) =>
+        list.map((u) =>
+          u.uid === monk.uid
+            ? { ...u, dodgeChance: 1.0, evasionTimer: 6, counterOnDodge: true }
+            : u,
+        ),
+      );
+      combat.projectiles.set([
+        {
+          id: 'proj-test-arrow',
+          sourceUid: archer.uid,
+          fromHero: false,
+          x: monk.x + 0.5,
+          y: monk.y,
+          targetUid: monk.uid,
+          targetX: monk.x,
+          targetY: monk.y,
+          speed: 34,
+          color: '#ef4444',
+          size: 7,
+          isHeal: false,
+          value: 20,
+        },
+      ]);
+
+      combat.step(0.05);
+      const archerAfterArrow = combat.enemies().find((e) => e.uid === archer.uid)!;
+      expect(archerAfterArrow.hp).toBe(initialArcherHp);
+
+      combat.stopBattle();
+    });
+
+    it('should generate and claim openable War Chest loot upon stage victory', () => {
+      const state = TestBed.inject(GameStateService);
+      const res = state.awardBattleRewards(STAGE_CATALOG[0], 115, 95, 3);
+      expect(res.warChest).toBeTruthy();
+      expect(res.warChest?.opened).toBe(false);
+
+      const claimed = state.claimWarChestLoot(res.warChest!);
+      expect(claimed.opened).toBe(true);
+      const knight = state.roster().find((h) => h.def.id === 'knight')!;
+      expect(knight.save.weaponTier).toBeGreaterThanOrEqual(2);
+    });
   });
 
   describe('StatusComponent', () => {
