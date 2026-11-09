@@ -349,6 +349,50 @@ describe('Battleheart Application & Core Mechanics Tests', () => {
       const knight = state.roster().find((h) => h.def.id === 'knight')!;
       expect(knight.save.weaponTier).toBeGreaterThanOrEqual(2);
     });
+
+    it('should gate Doomvale Champions Crest behind 15+ Endless Colosseum kills even after Stage 6 is cleared', () => {
+      const state = TestBed.inject(GameStateService);
+      // Clear Stage 6 with plenty of gold, but 0 Arena kills
+      state.awardBattleRewards(STAGE_CATALOG[5], 5000, 500, 3, 0);
+      expect(state.buyOrEquipTrinket('knight', 'bis-arena-warcrest')).toBe(false);
+
+      // Now achieve 15 kills in Stage 10 (Endless Colosseum)
+      const arenaStage = STAGE_CATALOG.find((s) => s.isArena)!;
+      state.awardBattleRewards(arenaStage, 270, 210, 3, 15);
+      expect(state.arenaBestKills()).toBe(15);
+      expect(state.buyOrEquipTrinket('knight', 'bis-arena-warcrest')).toBe(true);
+    });
+
+    it('should preserve rewards and show cash-out summary when retreating from Endless Arena with kills', () => {
+      const state = TestBed.inject(GameStateService);
+      const combat = TestBed.inject(CombatService);
+      const arenaStage = STAGE_CATALOG.find((s) => s.isArena)!;
+      const startGold = state.gold();
+
+      combat.startBattle(arenaStage);
+      combat.arenaKills.set(16);
+      combat.retreatOrCashOut();
+
+      expect(combat.outcome()).toBe('victory');
+      expect(combat.lastRewardSummary()?.gold).toBe(16 * 18);
+      expect(state.gold()).toBeGreaterThan(startGold);
+      expect(state.arenaBestKills()).toBe(16);
+      combat.stopBattle();
+    });
+
+    it('should automatically cast ready hero skills off cooldown when Auto-Cast Mode is enabled', () => {
+      const combat = TestBed.inject(CombatService);
+      combat.startBattle(STAGE_CATALOG[0]);
+      combat.toggleAutoCastSkills();
+      expect(combat.autoCastSkills()).toBe(true);
+
+      combat.step(0.05);
+      const knight = combat.heroes().find((h) => h.classId === 'knight')!;
+      expect(knight.shieldTimer).toBeGreaterThan(0);
+      expect(knight.skills[0].cooldownRemaining).toBeGreaterThan(0);
+
+      combat.stopBattle();
+    });
   });
 
   describe('StatusComponent', () => {

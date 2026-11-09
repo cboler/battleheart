@@ -84,6 +84,7 @@ export interface EquipmentTier {
   bonusStat: number;
   cost: number;
   unlockStageIndex: number;
+  requiresArenaKills?: number;
   isBestInSlot?: boolean;
 }
 
@@ -139,6 +140,7 @@ export interface TrinketDefinition {
   icon: string;
   cost: number;
   unlockStageIndex: number;
+  requiresArenaKills?: number;
   isBestInSlot?: boolean;
   bossDropFrom?: string;
   hpBonusPct?: number;

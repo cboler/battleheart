@@ -167,7 +167,8 @@ export const TRINKET_CATALOG: TrinketDefinition[] = [
     description: 'BiS Relic: +25% All Stats (HP, Power, Speed & Cooldown Recovery).',
     icon: '🏆',
     cost: 1650,
-    unlockStageIndex: 6,
+    unlockStageIndex: 10,
+    requiresArenaKills: 15,
     isBestInSlot: true,
     bossDropFrom: '10. Doomvale Endless Colosseum (15+ Kills)',
     hpBonusPct: 0.25,
@@ -776,10 +777,10 @@ export const HERO_CATALOG: Record<HeroClassId, HeroClassDefinition> = {
       id: 'wind-stance',
       name: 'Mantra of Wind',
       description:
-        'Taunts nearby foes, boosts Dodge Chance by +35% for 6s (opposed by Enemy Precision, 75% max cap), and counter-punches melee blows!',
+        'Taunts nearby foes, boosts Dodge Chance by +35% for 5s (opposed by Enemy Precision, 75% max cap), and counter-punches melee blows!',
       icon: '💨',
       isActive: true,
-      cooldownSec: 11,
+      cooldownSec: 12,
       effectType: 'wind-stance',
     },
     skillTiers: [

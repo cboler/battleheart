@@ -641,8 +641,7 @@
                   : hero.save.secondTrinketId === trinket.id
                     ? 2
                     : 0;
-              @let unlocked =
-                owned || gameState.highestClearedStageIndex() >= trinket.unlockStageIndex;
+              @let unlocked = gameState.isTrinketUnlocked(trinket);
               <div
                 class="trinket-card"
                 [class.equipped]="equippedSlot > 0"
@@ -667,7 +666,12 @@
                       }
                     } @else {
                       <p class="locked-relic-desc">
-                        Unlocks after clearing Campaign Stage {{ trinket.unlockStageIndex }}.
+                        @if (trinket.requiresArenaKills) {
+                          Unlocks after achieving {{ trinket.requiresArenaKills }}+ Kills in 10.
+                          Doomvale Endless Colosseum (Best: {{ gameState.arenaBestKills() }}).
+                        } @else {
+                          Unlocks after clearing Campaign Stage {{ trinket.unlockStageIndex }}.
+                        }
                         @if (trinket.bossDropFrom) {
                           <br />💀 Boss Trophy: {{ trinket.bossDropFrom }}
                         }
@@ -692,7 +696,13 @@
                   </button>
                 } @else {
                   <div class="tier-gate-notice">
-                    🔒 Clear Stage {{ trinket.unlockStageIndex }} to Unlock
+                    @if (trinket.requiresArenaKills) {
+                      🔒 Achieve {{ trinket.requiresArenaKills }}+ Arena Kills to Unlock ({{
+                        gameState.arenaBestKills()
+                      }}/{{ trinket.requiresArenaKills }})
+                    } @else {
+                      🔒 Clear Stage {{ trinket.unlockStageIndex }} to Unlock
+                    }
                   </div>
                 }
               </div>
@@ -994,6 +1004,17 @@
           </div>
           <button
             type="button"
+            id="toggle-auto-skills-btn"
+            class="hud-btn hud-btn-auto"
+            [class.is-active]="combat.autoCastSkills()"
+            (click)="combat.toggleAutoCastSkills()"
+            title="Automatically cast all party heroes' active skills off cooldown"
+            aria-label="Toggle Auto-Cast Skills"
+          >
+            {{ combat.autoCastSkills() ? '⚡ Auto: ON' : '⚡ Auto: OFF' }}
+          </button>
+          <button
+            type="button"
             class="hud-btn hud-btn-rotate"
             (click)="toggleForceLandscape()"
             title="Rotate to Widescreen Landscape"
@@ -1004,8 +1025,8 @@
           <button type="button" class="hud-btn" (click)="combat.togglePause()">
             {{ combat.isPaused() ? '▶️' : '⏸️' }}
           </button>
-          <button type="button" class="hud-btn hud-btn-retreat" (click)="combat.stopBattle()">
-            🏳️ Retreat
+          <button type="button" class="hud-btn hud-btn-retreat" (click)="combat.retreatOrCashOut()">
+            {{ stage.isArena && combat.arenaKills() > 0 ? '🏆 Cash Out' : '🏳️ Retreat' }}
           </button>
         </div>
 

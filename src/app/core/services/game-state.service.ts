@@ -14,6 +14,7 @@ import {
   SkillChoice,
   SkillDefinition,
   StageDefinition,
+  TrinketDefinition,
   WarChestLoot,
 } from '../models/game.model';
 import { AudioService } from './audio.service';
@@ -258,6 +259,15 @@ export class GameStateService {
     return true;
   }
 
+  public isTrinketUnlocked(trinket: TrinketDefinition): boolean {
+    const p = this.profile();
+    if (p.ownedTrinkets.includes(trinket.id)) return true;
+    if (trinket.requiresArenaKills) {
+      return p.arenaBestKills >= trinket.requiresArenaKills;
+    }
+    return this.highestClearedStageIndex() >= trinket.unlockStageIndex;
+  }
+
   public buyOrEquipTrinket(classId: HeroClassId, trinketId: string): boolean {
     const p = this.profile();
     const heroSave = p.heroes[classId];
@@ -266,7 +276,7 @@ export class GameStateService {
 
     const isOwned = p.ownedTrinkets.includes(trinketId);
     if (!isOwned) {
-      if (p.gold < trinket.cost || this.highestClearedStageIndex() < trinket.unlockStageIndex) {
+      if (p.gold < trinket.cost || !this.isTrinketUnlocked(trinket)) {
         return false;
       }
     }
@@ -712,7 +722,7 @@ export class GameStateService {
       dodgeChance: Math.min(0.5, Number(dodgeChance.toFixed(2))),
       counterOnDodge,
       lifesteal: Number(lifesteal.toFixed(2)),
-      cooldownMultiplier: Number(cooldownMultiplier.toFixed(2)),
+      cooldownMultiplier: Math.max(0.65, Number(cooldownMultiplier.toFixed(2))),
       regenPctPerSec,
       activeSkills,
       weaponName: def.weaponNames[save.weaponTier - 1] ?? def.weaponNames[0],

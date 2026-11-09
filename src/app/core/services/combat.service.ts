@@ -24,6 +24,7 @@ export class CombatService implements OnDestroy {
   public readonly activeStage = signal<StageDefinition | null>(null);
   public readonly isRunning = signal(false);
   public readonly isPaused = signal(false);
+  public readonly autoCastSkills = signal(false);
   public readonly outcome = signal<BattleOutcome>('ongoing');
 
   public readonly waveIndex = signal(0);
@@ -258,6 +259,42 @@ export class CombatService implements OnDestroy {
     this.activeStage.set(null);
   }
 
+  /**
+   * Retreats from battle. In Endless Colosseum (`stage.isArena`), retreating with >= 1 kill
+   * cashes out and preserves all earned Gold, XP, Best Kills, BiS Relics, and War Chest spoils!
+   */
+  public retreatOrCashOut(): void {
+    const stage = this.activeStage();
+    const kills = this.arenaKills();
+    if (stage?.isArena && kills > 0 && this.outcome() === 'ongoing') {
+      this.outcome.set('victory');
+      this.stopLoop();
+      this.audio.playVictory();
+
+      const goldEarned = kills * 18;
+      const xpEarned = kills * 14;
+      const stars = kills >= 15 ? 3 : kills >= 8 ? 2 : 1;
+      const res = this.gameState.awardBattleRewards(stage, goldEarned, xpEarned, stars, kills);
+      this.lastRewardSummary.set({
+        gold: goldEarned,
+        xp: xpEarned,
+        stars,
+        leveledUpHeroes: res.leveledUpHeroes,
+        bonusLootName: 'Colosseum Champion Coffer',
+        droppedRelicName: res.droppedRelicName,
+        unlockedHeroName: res.unlockedHeroName,
+        warChest: kills >= 5 ? res.warChest : null,
+      });
+      return;
+    }
+    this.stopBattle();
+  }
+
+  public toggleAutoCastSkills(): void {
+    this.autoCastSkills.set(!this.autoCastSkills());
+    this.audio.playSelect();
+  }
+
   public togglePause(): void {
     this.isPaused.set(!this.isPaused());
     this.audio.playSelect();
@@ -386,7 +423,7 @@ export class CombatService implements OnDestroy {
         break;
       }
       case 'wind-stance': {
-        hero.evasionTimer = 6;
+        hero.evasionTimer = 5;
         hero.threat += 260;
         for (const en of livingEnemies) {
           if (this.dist(hero, en) <= 40) {
@@ -807,7 +844,7 @@ export class CombatService implements OnDestroy {
         );
         for (const h of heroesInBlast) {
           const mult = tel.ability === 'ground-slam' ? 1.55 : 1.35;
-          this.applyDamage(source, h, Math.round(source.attack * mult), true);
+          this.applyDamage(source, h, Math.round(source.attack * mult), true, false, true);
           if (tel.ability === 'ground-slam') {
             h.stunTimer = 1.8;
           } else if (tel.ability === 'petrify-gaze') {
@@ -923,6 +960,30 @@ export class CombatService implements OnDestroy {
     ) {
       const nextHero = surviving.find((u) => u.isHero);
       this.selectedHeroUid.set(nextHero?.uid ?? null);
+    }
+
+    // 5b. Auto-Cast Mode for Active Skills (Automatic use off cooldown!)
+    if (this.autoCastSkills() && this.outcome() === 'ongoing') {
+      const currentUnits = this.units();
+      const livingEnemies = currentUnits.filter((u) => !u.isHero && u.hp > 0);
+      const livingHeroes = currentUnits.filter((u) => u.isHero && u.hp > 0 && u.stunTimer <= 0);
+      if (livingEnemies.length > 0) {
+        const anyAllyInjured = currentUnits.some(
+          (u) => u.isHero && u.hp > 0 && u.hp < u.maxHp * 0.82,
+        );
+        for (const h of livingHeroes) {
+          for (let sIdx = 0; sIdx < h.skills.length; sIdx++) {
+            const sk = h.skills[sIdx];
+            if (!sk || sk.cooldownRemaining > 0) continue;
+            const eff = sk.def.effectType;
+            const isPureHeal =
+              eff === 'group-heal' || eff === 'divine-shield' || eff === 'lay-on-hands';
+            if (isPureHeal && !anyAllyInjured) continue;
+            this.activateHeroSkill(h.uid, sIdx);
+            break;
+          }
+        }
+      }
     }
 
     this.checkWaveOrBattleCompletion();
@@ -1296,6 +1357,7 @@ export class CombatService implements OnDestroy {
     rawAmount: number,
     isCrit: boolean,
     isProjectile = false,
+    unavoidableAoE = false,
   ): void {
     if (target.invulnerableTimer > 0 || target.hp <= 0) return;
 
@@ -1303,8 +1365,8 @@ export class CombatService implements OnDestroy {
     const effectiveRaw =
       attacker && attacker.weakenTimer > 0 ? Math.round(rawAmount * 0.65) : rawAmount;
 
-    // Dodge Tank & Evasion Mechanic (Opposed by Enemy Precision / Aim, capped at 75% effective dodge):
-    if (target.isHero && (!attacker || !attacker.isHero)) {
+    // Dodge Tank & Evasion Mechanic (Opposed by Enemy Precision / Aim, capped at 75% effective dodge; ground AoE telegraphs must be kited!):
+    if (!unavoidableAoE && target.isHero && (!attacker || !attacker.isHero)) {
       const rawDodge = (target.dodgeChance ?? 0) + (target.evasionTimer > 0 ? 0.35 : 0);
       const enemyPrecision = attacker?.precision ?? 0.1;
       const effectiveDodge = Math.max(0, Math.min(0.75, rawDodge - enemyPrecision));
@@ -1450,7 +1512,7 @@ export class CombatService implements OnDestroy {
     const waveLeadDelay = waveIdx > 0 ? 0.9 : 0;
 
     if (stage.isArena) {
-      // Procedural escalating wave for Endless Arena
+      // Procedural escalating wave for Endless Arena (scales enemy count, bosses, and stats!)
       const pool: EnemyId[] = [
         'goblin-scout',
         'goblin-archer',
@@ -1461,19 +1523,29 @@ export class CombatService implements OnDestroy {
         'skeleton-warrior',
         'dark-necromancer',
       ];
-      const count = Math.min(7, 2 + Math.floor(waveIdx / 2));
+      const count = Math.min(11, 3 + Math.floor(waveIdx * 0.75));
       for (let i = 0; i < count; i++) {
-        const pick = pool[(waveIdx + i) % pool.length];
+        const pick = pool[(waveIdx * 2 + i) % pool.length];
         this.pendingSpawns.push({
           enemyId: pick,
-          spawnAtElapsed: waveLeadDelay + i * 1.35,
+          spawnAtElapsed: waveLeadDelay + i * Math.max(0.75, 1.3 - waveIdx * 0.04),
         });
       }
-      if (waveIdx > 0 && waveIdx % 4 === 0) {
+      // Every 3rd Arena wave spawns a rotating Boss Champion (and dual bosses in deep waves!)
+      if ((waveIdx + 1) % 3 === 0) {
+        const bossPool: EnemyId[] = ['king-slime', 'cave-troll', 'gorgon-queen', 'dragon-whelp'];
+        const bossPick = bossPool[Math.floor(waveIdx / 3) % bossPool.length];
         this.pendingSpawns.push({
-          enemyId: 'cave-troll',
-          spawnAtElapsed: waveLeadDelay + 1.8,
+          enemyId: bossPick,
+          spawnAtElapsed: waveLeadDelay + 1.6,
         });
+        if (waveIdx >= 11) {
+          const secondBoss = bossPool[(Math.floor(waveIdx / 3) + 1) % bossPool.length];
+          this.pendingSpawns.push({
+            enemyId: secondBoss,
+            spawnAtElapsed: waveLeadDelay + 3.2,
+          });
+        }
       }
     } else {
       const wave = stage.waves[waveIdx] ?? [];
@@ -1499,7 +1571,10 @@ export class CombatService implements OnDestroy {
   private createEnemyUnit(enemyId: EnemyId, offsetIdx: number): CombatUnit {
     const def = ENEMY_CATALOG[enemyId];
     const stage = this.activeStage();
-    const waveScale = stage?.isArena ? 1 + this.waveIndex() * 0.14 : 1;
+    const w = this.waveIndex();
+    const waveScale = stage?.isArena ? Math.pow(1.18, w) + w * 0.08 : 1;
+    const arenaSpeedMult = stage?.isArena ? 1 + Math.min(0.35, w * 0.025) : 1;
+    const arenaCadenceDiv = stage?.isArena ? 1 + Math.min(0.6, w * 0.04) : 1;
 
     const spawnY = 44 + ((offsetIdx * 13 + this.uidCounter * 7) % 38);
     const spawnX = 87 + (offsetIdx % 3) * 2.5;
@@ -1522,15 +1597,12 @@ export class CombatService implements OnDestroy {
       maxHp: Math.round(def.maxHp * waveScale),
       hp: Math.round(def.maxHp * waveScale),
       attack: Math.round(def.attack * waveScale),
-      defense: def.defense,
-      precision: Math.min(
-        0.4,
-        (def.precision ?? 0.1) + (stage?.isArena ? this.waveIndex() * 0.015 : 0),
-      ),
+      defense: Math.round(def.defense * (stage?.isArena ? 1 + w * 0.08 : 1)),
+      precision: Math.min(0.48, (def.precision ?? 0.1) + (stage?.isArena ? w * 0.025 : 0)),
       attackRange: def.attackRange,
-      attackIntervalSec: def.attackIntervalSec,
+      attackIntervalSec: Number((def.attackIntervalSec / arenaCadenceDiv).toFixed(2)),
       attackTimer: 0.6 + (offsetIdx % 3) * 0.25,
-      moveSpeed: def.moveSpeed,
+      moveSpeed: Number((def.moveSpeed * arenaSpeedMult).toFixed(2)),
       critChance: 0.05,
       dodgeChance: 0,
       lifesteal: 0,

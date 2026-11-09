@@ -1456,6 +1456,18 @@
   border-radius: 10px;
 }
 
+.hud-btn-auto {
+  border-color: #64748b;
+  color: #cbd5e1;
+
+  &.is-active {
+    border-color: #fde047;
+    color: #fde047;
+    background: linear-gradient(180deg, rgba(180, 83, 9, 0.78), rgba(28, 16, 8, 0.92));
+    box-shadow: 0 0 12px rgba(253, 224, 71, 0.45);
+  }
+}
+
 .hud-btn-retreat {
   border-color: #ef4444;
   color: #fca5a5;
@@ -1851,6 +1863,8 @@
   z-index: 150;
   padding: 8px;
   overflow-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 .outcome-card {
@@ -1861,6 +1875,8 @@
   max-width: 480px;
   max-height: calc(100% - 8px);
   overflow-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
   width: 100%;
   text-align: center;
   display: flex;
@@ -1978,6 +1994,11 @@
 }
 
 .outcome-actions {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(28, 16, 8, 0.88) 0%, #1c1008 40%);
+  padding-top: 6px;
+  z-index: 5;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
