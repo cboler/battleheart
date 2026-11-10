@@ -104,7 +104,7 @@ export class StorageService {
     }
   }
 
-  private sanitizeProfile(raw: Partial<SaveProfile>): SaveProfile {
+  public sanitizeProfile(raw: Partial<SaveProfile>): SaveProfile {
     const fallback = this.createDefaultProfile();
     const heroes = { ...fallback.heroes };
 
@@ -139,13 +139,29 @@ export class StorageService {
       heroes.knight.inParty = true;
     }
 
+    const arenaBestKills = Math.max(0, Number(raw.arenaBestKills) || 0);
+    let ownedTrinkets = Array.isArray(raw.ownedTrinkets) ? [...raw.ownedTrinkets] : [];
+
+    // Sanitize Champion's Crest: strictly locked behind 15+ Endless Colosseum kills
+    if (arenaBestKills < 15) {
+      ownedTrinkets = ownedTrinkets.filter((id) => id !== 'bis-arena-warcrest');
+      for (const h of Object.values(heroes)) {
+        if (h.trinketId === 'bis-arena-warcrest') {
+          h.trinketId = null;
+        }
+        if (h.secondTrinketId === 'bis-arena-warcrest') {
+          h.secondTrinketId = null;
+        }
+      }
+    }
+
     return {
       version: 1,
       gold: Math.max(0, Number(raw.gold ?? fallback.gold)),
       completedStageIds: Array.isArray(raw.completedStageIds) ? raw.completedStageIds : [],
       stageStars: raw.stageStars && typeof raw.stageStars === 'object' ? { ...raw.stageStars } : {},
-      arenaBestKills: Math.max(0, Number(raw.arenaBestKills) || 0),
-      ownedTrinkets: Array.isArray(raw.ownedTrinkets) ? raw.ownedTrinkets : [],
+      arenaBestKills,
+      ownedTrinkets,
       heroes,
       updatedAt: Number(raw.updatedAt) || Date.now(),
     };

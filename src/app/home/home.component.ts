@@ -31,6 +31,7 @@ import { AudioService } from '../core/services/audio.service';
 import { CombatService } from '../core/services/combat.service';
 import { GameStateService } from '../core/services/game-state.service';
 import { GamepadService } from '../core/services/gamepad.service';
+import { WeatherShaderService } from '../core/services/weather-shader.service';
 
 export type HubTab = 'map' | 'tavern' | 'armory' | 'academy' | 'saves' | 'about';
 
@@ -46,9 +47,19 @@ export class HomeComponent implements OnInit, OnDestroy {
   protected readonly combat = inject(CombatService);
   protected readonly audio = inject(AudioService);
   protected readonly gamepad = inject(GamepadService);
+  protected readonly weatherShader = inject(WeatherShaderService);
   private readonly swUpdate = inject(SwUpdate, { optional: true });
 
   @ViewChild('arenaRef') private arenaRef?: ElementRef<HTMLElement>;
+
+  @ViewChild('weatherCanvas') set weatherCanvasRef(ref: ElementRef<HTMLCanvasElement> | undefined) {
+    if (ref?.nativeElement) {
+      this.weatherShader.attach(ref.nativeElement);
+      this.weatherShader.setTheme(this.combat.currentStageWeather());
+    } else {
+      this.weatherShader.detach();
+    }
+  }
 
   protected readonly activeTab = signal<HubTab>('map');
   protected readonly inspectedHeroId = signal<HeroClassId>('knight');
@@ -148,6 +159,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.gamepadSub?.unsubscribe();
+    this.weatherShader.detach();
     this.combat.stopBattle();
   }
 
@@ -213,6 +225,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
     this.audio.playSelect();
     this.combat.startBattle(stage);
+    this.weatherShader.setTheme(this.combat.currentStageWeather());
   }
 
   toggleForceLandscape(): void {

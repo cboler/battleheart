@@ -4,6 +4,7 @@ import { STAGE_CATALOG } from './core/models/game-catalog';
 import { CombatService } from './core/services/combat.service';
 import { GameStateService } from './core/services/game-state.service';
 import { StorageService } from './core/services/storage.service';
+import { WeatherShaderService } from './core/services/weather-shader.service';
 import { App } from './app';
 import { routes } from './app.routes';
 import { HomeComponent } from './home/home.component';
@@ -425,6 +426,85 @@ describe('Battleheart Application & Core Mechanics Tests', () => {
       expect(knight.skills[0].cooldownRemaining).toBeGreaterThan(0);
 
       combat.stopBattle();
+    });
+
+    it('should map stages to environmental shader themes and handle screenshake', () => {
+      const combat = TestBed.inject(CombatService);
+
+      combat.startBattle(STAGE_CATALOG[0]); // Stage 1 (Verdant Outskirts)
+      expect(combat.currentStageWeather()).toBe('sunlight');
+
+      const spiderStage = STAGE_CATALOG.find((s) => s.id === 'stage-3')!;
+      combat.startBattle(spiderStage);
+      expect(combat.currentStageWeather()).toBe('rain');
+
+      const slimeStage = STAGE_CATALOG.find((s) => s.id === 'stage-4')!;
+      combat.startBattle(slimeStage);
+      expect(combat.currentStageWeather()).toBe('toxic-spores');
+
+      const mountainStage = STAGE_CATALOG.find((s) => s.id === 'stage-6')!;
+      combat.startBattle(mountainStage);
+      expect(combat.currentStageWeather()).toBe('blizzard');
+
+      const cryptStage = STAGE_CATALOG.find((s) => s.id === 'stage-7')!;
+      combat.startBattle(cryptStage);
+      expect(combat.currentStageWeather()).toBe('crypt-mist');
+
+      const dragonStage = STAGE_CATALOG.find((s) => s.id === 'stage-9')!;
+      combat.startBattle(dragonStage);
+      expect(combat.currentStageWeather()).toBe('volcano-fire');
+
+      const arenaStage = STAGE_CATALOG.find((s) => s.isArena)!;
+      combat.startBattle(arenaStage);
+      expect(combat.currentStageWeather()).toBe('colosseum-glory');
+
+      // Screenshake test
+      expect(combat.screenShake()).toBe(0);
+      combat.triggerScreenShake(1.5);
+      expect(combat.screenShake()).toBe(1.5);
+      combat.step(0.1);
+      expect(combat.screenShake()).toBeLessThan(1.5);
+
+      combat.stopBattle();
+    });
+
+    it('should sanitize and strip unearned Champion Crest from save profile if arenaBestKills < 15', () => {
+      const storage = TestBed.inject(StorageService);
+      const rawCorruptedProfile = {
+        version: 1,
+        gold: 1000,
+        completedStageIds: ['stage-1', 'stage-6'],
+        stageStars: { 'stage-1': 3, 'stage-6': 3 },
+        arenaBestKills: 8, // Less than the required 15!
+        ownedTrinkets: ['trinket-wolf-tooth', 'bis-arena-warcrest'],
+        heroes: {
+          knight: {
+            unlocked: true,
+            inParty: true,
+            level: 5,
+            xp: 0,
+            weaponTier: 2,
+            armorTier: 2,
+            trinketId: 'bis-arena-warcrest',
+            secondTrinketId: null,
+          },
+        },
+      };
+
+      const normalized = storage.sanitizeProfile(rawCorruptedProfile as never);
+      expect(normalized.ownedTrinkets).not.toContain('bis-arena-warcrest');
+      expect(normalized.ownedTrinkets).toContain('trinket-wolf-tooth');
+      expect(normalized.heroes.knight.trinketId).toBeNull();
+    });
+
+    it('should attach WeatherShaderService to canvas, set themes, and detach cleanly', () => {
+      const weather = TestBed.inject(WeatherShaderService);
+      const canvas = document.createElement('canvas');
+      weather.attach(canvas);
+      weather.setTheme('volcano-fire');
+      expect(weather.activeTheme()).toBe('volcano-fire');
+      weather.triggerLightning();
+      weather.detach();
     });
   });
 

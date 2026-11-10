@@ -950,6 +950,8 @@
         #arenaRef
         id="battlefield-arena"
         class="arena-viewport"
+        [class.has-screenshake]="combat.screenShake() > 0"
+        [class.has-modal]="combat.outcome() !== 'ongoing'"
         (pointerdown)="onArenaPointerDown($event)"
         (pointermove)="onArenaPointerMove($event)"
         (pointerup)="onArenaPointerUp($event)"
@@ -962,6 +964,14 @@
           [alt]="stage.name"
           draggable="false"
         />
+
+        <!-- Environmental Weather Shaders (WebGL GPU Canvas: Rain, Blizzard, Magma Embers, Toxic Spores, Golden Rays) -->
+        <canvas
+          #weatherCanvas
+          class="arena-weather-canvas"
+          [attr.data-weather]="combat.currentStageWeather()"
+          aria-hidden="true"
+        ></canvas>
 
         <!-- TOP-LEFT CLASSIC BATTLEHEART HERO PORTRAIT STRIP -->
         <div class="bh-top-left-portraits" aria-label="Party Portraits">
@@ -1250,6 +1260,17 @@
             [class.is-hero]="unit.isHero"
             [class.is-enemy]="!unit.isHero"
             [class.is-boss]="unit.isBoss"
+            [class.hero-knight]="unit.classId === 'knight'"
+            [class.hero-cleric]="unit.classId === 'cleric'"
+            [class.hero-rogue]="unit.classId === 'rogue'"
+            [class.hero-wizard]="unit.classId === 'wizard'"
+            [class.hero-monk]="unit.classId === 'monk'"
+            [class.hero-paladin]="unit.classId === 'paladin'"
+            [class.hero-witch]="unit.classId === 'witch'"
+            [class.hero-bard]="unit.classId === 'bard'"
+            [class.enemy-slime]="unit.enemyId === 'giant-slime' || unit.enemyId === 'king-slime'"
+            [class.enemy-troll]="unit.enemyId === 'cave-troll'"
+            [class.enemy-dragon]="unit.enemyId === 'dragon-whelp'"
             [class.is-selected]="combat.selectedHeroUid() === unit.uid"
             [class.is-hovered-target]="hoveredTargetUid() === unit.uid"
             [class.is-moving]="unit.isMoving"
@@ -1257,6 +1278,8 @@
             [class.is-hurt]="unit.hurtAnimTimer > 0"
             [class.is-stunned]="unit.stunTimer > 0"
             [class.is-shielded]="unit.shieldTimer > 0"
+            [class.is-evading]="unit.evasionTimer > 0"
+            [class.is-empowered]="unit.attackBuffTimer > 0 || unit.hasteTimer > 0"
             [style.left.%]="unit.x"
             [style.top.%]="unit.y"
             [style.zIndex]="Math.round(unit.y)"
@@ -1273,13 +1296,81 @@
               <div class="shield-aura-dome" aria-hidden="true"></div>
             }
 
-            <!-- Melee Weapon Slash Arc -->
-            @if (unit.attackAnimTimer > 0 && unit.attackRange <= 20) {
-              <div
-                class="melee-slash-arc"
-                [class.facing-left]="unit.facing === 'left'"
-                aria-hidden="true"
-              ></div>
+            <!-- Character Unique Aura Shaders / Energy Halos -->
+            @if (unit.evasionTimer > 0) {
+              <div class="vfx-monk-wind-cyclone" aria-hidden="true"></div>
+            }
+            @if (unit.classId === 'paladin') {
+              <div class="vfx-paladin-solar-halo" aria-hidden="true"></div>
+            }
+            @if (unit.attackBuffTimer > 0 || unit.hasteTimer > 0) {
+              <div class="vfx-empower-sparks" aria-hidden="true"></div>
+            }
+            @if (unit.isBoss) {
+              <div class="vfx-boss-menace" aria-hidden="true"></div>
+            }
+
+            <!-- Unique Per-Class Melee & Magic Attack Slash Effects -->
+            @if (unit.attackAnimTimer > 0) {
+              @if (unit.classId === 'knight') {
+                <div
+                  class="vfx-knight-slash"
+                  [class.facing-left]="unit.facing === 'left'"
+                  aria-hidden="true"
+                ></div>
+              } @else if (unit.classId === 'rogue') {
+                <div
+                  class="vfx-rogue-cross"
+                  [class.facing-left]="unit.facing === 'left'"
+                  aria-hidden="true"
+                ></div>
+              } @else if (unit.classId === 'monk') {
+                <div
+                  class="vfx-monk-fists"
+                  [class.facing-left]="unit.facing === 'left'"
+                  aria-hidden="true"
+                ></div>
+              } @else if (unit.classId === 'paladin') {
+                <div
+                  class="vfx-paladin-hammer"
+                  [class.facing-left]="unit.facing === 'left'"
+                  aria-hidden="true"
+                ></div>
+              } @else if (unit.classId === 'wizard') {
+                <div
+                  class="vfx-wizard-flame-sigil"
+                  [class.facing-left]="unit.facing === 'left'"
+                  aria-hidden="true"
+                ></div>
+              } @else if (unit.classId === 'cleric') {
+                <div
+                  class="vfx-cleric-starlight"
+                  [class.facing-left]="unit.facing === 'left'"
+                  aria-hidden="true"
+                ></div>
+              } @else if (unit.classId === 'witch') {
+                <div
+                  class="vfx-warlock-void"
+                  [class.facing-left]="unit.facing === 'left'"
+                  aria-hidden="true"
+                ></div>
+              } @else if (unit.classId === 'bard') {
+                <div
+                  class="vfx-bard-notes"
+                  [class.facing-left]="unit.facing === 'left'"
+                  aria-hidden="true"
+                >
+                  <span class="note note-1">🎵</span>
+                  <span class="note note-2">🎶</span>
+                  <span class="note note-3">♩</span>
+                </div>
+              } @else if (unit.attackRange <= 20) {
+                <div
+                  class="melee-slash-arc"
+                  [class.facing-left]="unit.facing === 'left'"
+                  aria-hidden="true"
+                ></div>
+              }
             }
 
             <!-- Overhead HP Bar & Status Badges -->
@@ -1411,51 +1502,68 @@
                   }
                 }
               </div>
+
               @if (combat.lastRewardSummary(); as reward) {
-                <p class="reward-line">
-                  Spoils of War: <strong>🪙 +{{ reward.gold }} Gold</strong> &amp;
-                  <strong>✨ +{{ reward.xp }} XP</strong>
-                </p>
-                @if (reward.warChest; as chest) {
-                  @if (!chest.opened) {
-                    <button
-                      type="button"
-                      id="open-war-chest-btn"
-                      class="spoils-chest-box is-openable"
-                      (click)="combat.openWarChest()"
-                    >
-                      <span class="chest-icon">🧰</span>
-                      <span class="chest-name">{{ chest.chestTitle }}</span>
-                      <span class="chest-cta">🔓 Tap to Open!</span>
-                    </button>
-                  } @else {
-                    <div class="spoils-chest-box is-opened" id="opened-war-chest-banner">
-                      <span class="chest-icon">🎁</span>
-                      <div class="chest-loot-details">
-                        <strong>{{ chest.lootIcon }} {{ chest.lootTitle }}</strong>
-                        <span>{{ chest.lootDetail }}</span>
-                      </div>
+                <div class="outcome-scroll-body">
+                  <div class="outcome-rewards-grid">
+                    <div class="spoils-summary-col">
+                      <p class="reward-line">
+                        Spoils of War: <strong>🪙 +{{ reward.gold }} Gold</strong> &amp;
+                        <strong>✨ +{{ reward.xp }} XP</strong>
+                      </p>
+                      @if (reward.warChest; as chest) {
+                        @if (!chest.opened) {
+                          <button
+                            type="button"
+                            id="open-war-chest-btn"
+                            class="spoils-chest-box is-openable"
+                            (click)="combat.openWarChest()"
+                            title="Tap to crack open the war chest for bonus gold multiplier & XP!"
+                          >
+                            <span class="chest-icon">🧰</span>
+                            <div class="chest-text">
+                              <span class="chest-name">{{ chest.chestTitle }}</span>
+                              <span class="chest-sub">Bonus Gold Multiplier</span>
+                            </div>
+                            <span class="chest-cta">🔓 Tap to Open!</span>
+                          </button>
+                        } @else {
+                          <div class="spoils-chest-box is-opened" id="opened-war-chest-banner">
+                            <span class="chest-icon">🎁</span>
+                            <div class="chest-loot-details">
+                              <strong>{{ chest.lootIcon }} {{ chest.lootTitle }}</strong>
+                              <span>{{ chest.lootDetail }}</span>
+                            </div>
+                          </div>
+                        }
+                      }
                     </div>
-                  }
-                }
-                @if (reward.unlockedHeroName) {
-                  <div class="bis-drop-banner">
-                    🍺 NEW HERO UNLOCKED IN TAVERN: <strong>{{ reward.unlockedHeroName }}</strong
-                    >!
+
+                    <div class="unlocks-summary-col">
+                      @if (reward.unlockedHeroName) {
+                        <div class="bis-drop-banner">
+                          🍺 NEW HERO UNLOCKED IN TAVERN:
+                          <strong>{{ reward.unlockedHeroName }}</strong
+                          >!
+                        </div>
+                      }
+                      @if (reward.droppedRelicName) {
+                        <div class="bis-drop-banner">
+                          🌟 BEST-IN-SLOT RELIC ACQUIRED:
+                          <strong>{{ reward.droppedRelicName }}</strong
+                          >!
+                        </div>
+                      }
+                      @if (reward.leveledUpHeroes.length > 0) {
+                        <div class="levelup-banner">
+                          🎉 Level Up: {{ reward.leveledUpHeroes.join(', ') }}!
+                        </div>
+                      }
+                    </div>
                   </div>
-                }
-                @if (reward.droppedRelicName) {
-                  <div class="bis-drop-banner">
-                    🌟 BEST-IN-SLOT RELIC ACQUIRED: <strong>{{ reward.droppedRelicName }}</strong
-                    >!
-                  </div>
-                }
-                @if (reward.leveledUpHeroes.length > 0) {
-                  <div class="levelup-banner">
-                    🎉 Level Up: {{ reward.leveledUpHeroes.join(', ') }}!
-                  </div>
-                }
+                </div>
               }
+
               <div class="outcome-actions">
                 <button type="button" class="btn-gold" (click)="launchStage(stage)">
                   🔄 Fight Again

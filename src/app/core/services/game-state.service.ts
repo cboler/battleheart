@@ -262,10 +262,11 @@ export class GameStateService {
 
   public isTrinketUnlocked(trinket: TrinketDefinition): boolean {
     const p = this.profile();
-    if (p.ownedTrinkets.includes(trinket.id)) return true;
-    if (trinket.requiresArenaKills) {
-      return p.arenaBestKills >= trinket.requiresArenaKills;
+    // Strict gate: If relic requires Arena Kills, player must have achieved them
+    if (trinket.requiresArenaKills && p.arenaBestKills < trinket.requiresArenaKills) {
+      return false;
     }
+    if (p.ownedTrinkets.includes(trinket.id)) return true;
     return this.highestClearedStageIndex() >= trinket.unlockStageIndex;
   }
 
@@ -274,6 +275,11 @@ export class GameStateService {
     const heroSave = p.heroes[classId];
     const trinket = TRINKET_CATALOG.find((t) => t.id === trinketId);
     if (!heroSave || !trinket) return false;
+
+    // Strict gate: Ensure Champion's Crest cannot be bought or equipped without 15+ Arena Kills
+    if (trinket.requiresArenaKills && p.arenaBestKills < trinket.requiresArenaKills) {
+      return false;
+    }
 
     const isOwned = p.ownedTrinkets.includes(trinketId);
     if (!isOwned) {

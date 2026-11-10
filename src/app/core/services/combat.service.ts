@@ -13,6 +13,7 @@ import {
 } from '../models/game.model';
 import { AudioService } from './audio.service';
 import { GameStateService } from './game-state.service';
+import { WeatherTheme } from './weather-shader.service';
 
 export type BattleOutcome = 'ongoing' | 'victory' | 'defeat';
 
@@ -26,6 +27,36 @@ export class CombatService implements OnDestroy {
   public readonly isPaused = signal(false);
   public readonly autoCastSkills = signal(false);
   public readonly outcome = signal<BattleOutcome>('ongoing');
+  public readonly screenShake = signal(0);
+
+  public readonly currentStageWeather = computed<WeatherTheme>(() => {
+    const s = this.activeStage();
+    if (!s) return 'sunlight';
+    if (s.isArena) return 'colosseum-glory';
+    switch (s.id) {
+      case 'stage-1':
+      case 'stage-2':
+        return 'sunlight';
+      case 'stage-3':
+      case 'stage-5':
+        return 'rain';
+      case 'stage-4':
+        return 'toxic-spores';
+      case 'stage-6':
+        return 'blizzard';
+      case 'stage-7':
+      case 'stage-8':
+        return 'crypt-mist';
+      case 'stage-9':
+        return 'volcano-fire';
+      default:
+        return 'sunlight';
+    }
+  });
+
+  public triggerScreenShake(intensity = 1.0): void {
+    this.screenShake.set(Math.min(2.5, intensity));
+  }
 
   public readonly waveIndex = signal(0);
   public readonly totalWaves = signal(1);
@@ -129,6 +160,7 @@ export class CombatService implements OnDestroy {
     this.activeStage.set(stage);
     this.outcome.set('ongoing');
     this.isPaused.set(false);
+    this.screenShake.set(0);
     this.waveIndex.set(0);
     this.totalWaves.set(stage.isArena ? 99 : stage.waves.length);
     this.arenaKills.set(0);
@@ -752,6 +784,10 @@ export class CombatService implements OnDestroy {
 
     const clampedDt = Math.min(0.1, Math.max(0.001, dt));
     this.waveElapsedSec += clampedDt;
+
+    if (this.screenShake() > 0) {
+      this.screenShake.set(Math.max(0, this.screenShake() - clampedDt * 4.5));
+    }
 
     // 1. Check pending wave spawns
     if (this.pendingSpawns.length > 0) {
