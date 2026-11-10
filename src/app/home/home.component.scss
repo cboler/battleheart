@@ -2478,6 +2478,7 @@
   .outcome-scroll-body {
     flex: 1 1 auto;
     min-height: 0;
+    overflow-x: hidden !important;
     overflow-y: auto;
     touch-action: pan-y !important;
     -webkit-overflow-scrolling: touch;
@@ -2486,13 +2487,15 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: #b48a4e transparent;
 
     &::-webkit-scrollbar {
       width: 5px;
+      height: 0px !important;
     }
     &::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.25);
-      border-radius: 4px;
+      background: transparent;
     }
     &::-webkit-scrollbar-thumb {
       background: #b48a4e;
@@ -2573,7 +2576,8 @@
 
       &:hover,
       &:active {
-        transform: scale(1.02);
+        filter: brightness(1.08);
+        box-shadow: 0 0 22px rgba(253, 224, 71, 0.75);
       }
 
       .chest-cta {
@@ -2664,11 +2668,11 @@
 @keyframes bh-chest-pulse {
   0%,
   100% {
-    transform: scale(1);
+    box-shadow: 0 0 12px rgba(253, 224, 71, 0.4);
     border-color: #fde047;
   }
   50% {
-    transform: scale(1.02);
+    box-shadow: 0 0 22px rgba(253, 224, 71, 0.85);
     border-color: #fef08a;
   }
 }
@@ -2685,11 +2689,9 @@
 @keyframes bh-loot-reveal {
   0% {
     opacity: 0.5;
-    transform: scale(0.96);
   }
   100% {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
@@ -3045,6 +3047,7 @@
     }
 
     .outcome-scroll-body {
+      overflow-x: hidden !important;
       padding: 1px 0;
       gap: 4px;
     }
