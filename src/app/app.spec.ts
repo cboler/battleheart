@@ -338,16 +338,22 @@ describe('Battleheart Application & Core Mechanics Tests', () => {
       combat.stopBattle();
     });
 
-    it('should generate and claim openable War Chest loot upon stage victory', () => {
+    it('should generate and claim openable War Chest loot applying gold multiplier without gear skipping', () => {
       const state = TestBed.inject(GameStateService);
       const res = state.awardBattleRewards(STAGE_CATALOG[0], 115, 95, 3);
       expect(res.warChest).toBeTruthy();
       expect(res.warChest?.opened).toBe(false);
+      expect(res.warChest?.multiplier).toBeGreaterThanOrEqual(1.25);
+      expect(res.warChest?.bonusGold).toBeGreaterThan(0);
 
+      const preClaimGold = state.gold();
       const claimed = state.claimWarChestLoot(res.warChest!);
       expect(claimed.opened).toBe(true);
+      expect(state.gold()).toBe(preClaimGold + claimed.bonusGold);
+
+      // Verify gear was not skipped for free
       const knight = state.roster().find((h) => h.def.id === 'knight')!;
-      expect(knight.save.weaponTier).toBeGreaterThanOrEqual(2);
+      expect(knight.save.weaponTier).toBe(1);
     });
 
     it('should gate Doomvale Champions Crest behind 15+ Endless Colosseum kills even after Stage 6 is cleared', () => {
@@ -374,9 +380,36 @@ describe('Battleheart Application & Core Mechanics Tests', () => {
       combat.retreatOrCashOut();
 
       expect(combat.outcome()).toBe('victory');
-      expect(combat.lastRewardSummary()?.gold).toBe(16 * 18);
+      expect(combat.lastRewardSummary()?.gold).toBe(16 * 20);
       expect(state.gold()).toBeGreaterThan(startGold);
       expect(state.arenaBestKills()).toBe(16);
+      combat.stopBattle();
+    });
+
+    it('should allow Lady Valeria (Paladin) to draw aggro with Holy Radiance (consecration) and Hammer of Justice (Smite)', () => {
+      const state = TestBed.inject(GameStateService);
+      const combat = TestBed.inject(CombatService);
+
+      // Unlock and hire Paladin
+      state.awardBattleRewards(STAGE_CATALOG[3], 2000, 500, 3);
+      state.hireHero('paladin');
+
+      combat.startBattle(STAGE_CATALOG[0]);
+      const paladin = combat.heroes().find((h) => h.classId === 'paladin')!;
+      expect(paladin).toBeTruthy();
+
+      const enemy = combat.enemies()[0];
+      expect(enemy).toBeTruthy();
+
+      // Fire Holy Radiance (skill 0)
+      const initialThreat = paladin.threat;
+      combat.activateHeroSkill(paladin.uid, 0);
+
+      const paladinAfter = combat.heroes().find((h) => h.uid === paladin.uid)!;
+      expect(paladinAfter.threat).toBeGreaterThan(initialThreat);
+      const enemyAfter = combat.enemies().find((e) => e.uid === enemy.uid)!;
+      expect(enemyAfter.targetUnitUid).toBe(paladin.uid);
+
       combat.stopBattle();
     });
 

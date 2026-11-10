@@ -1416,7 +1416,7 @@
                   Spoils of War: <strong>🪙 +{{ reward.gold }} Gold</strong> &amp;
                   <strong>✨ +{{ reward.xp }} XP</strong>
                 </p>
-                @if (combat.outcome() === 'victory' && reward.warChest; as chest) {
+                @if (reward.warChest; as chest) {
                   @if (!chest.opened) {
                     <button
                       type="button"

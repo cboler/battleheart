@@ -34,6 +34,7 @@ export interface ComputedHeroStats {
   lifesteal: number;
   cooldownMultiplier: number;
   regenPctPerSec: number;
+  threatMultiplier?: number;
   activeSkills: SkillDefinition[];
   weaponName: string;
   armorName: string;
@@ -431,16 +432,20 @@ export class GameStateService {
       heroes: updatedHeroes,
     });
 
-    const warChest = stars > 0 ? this.rollWarChestLoot(stage) : null;
+    const warChest = stars > 0 ? this.rollWarChestLoot(stage, goldEarned, xpEarned) : null;
     return { leveledUpHeroes, droppedRelicName, unlockedHeroName, warChest };
   }
 
   /**
-   * Generates a real, openable War Chest reward upon stage victory!
-   * Prioritizes a free Weapon/Armor tier upgrade for an active party hero or an unowned Merchant Trinket,
-   * and falls back to a Royal Gemstone / Valor Tome cache with bonus Gold & XP.
+   * Generates a real, openable War Chest reward upon stage victory or Arena milestone!
+   * Rolls a loot tier (Common to Legendary) that applies a multiplier to the battle's earned Gold,
+   * rewarding players with bonus Gold & XP while preserving Armory gear progression.
    */
-  public rollWarChestLoot(stage: StageDefinition): WarChestLoot {
+  public rollWarChestLoot(
+    stage: StageDefinition,
+    baseGold: number = stage.goldReward,
+    baseXp: number = stage.xpReward,
+  ): WarChestLoot {
     const spoilsPool = [
       "King's Gilded War Chest",
       'Mithril-Bound Spoils Coffer',
@@ -449,74 +454,52 @@ export class GameStateService {
       'Dragonscale Treasury Chest',
     ];
     const chestTitle = spoilsPool[(stage.index - 1) % spoilsPool.length] ?? spoilsPool[0];
-    const p = this.profile();
-    const maxGearTier = Math.min(6, this.unlockedGearTier());
-    const clearedIdx = this.highestClearedStageIndex();
 
-    const activeIds = this.allHeroIds.filter((id) => p.heroes[id].unlocked && p.heroes[id].inParty);
+    // Loot Tier Roll based on weighted probabilities
+    const roll = Math.random();
+    let lootTier: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+    let multiplier: number;
+    let lootIcon: string;
+    let lootTitle: string;
 
-    // 1. Check if an active party hero can receive a Weapon or Armor upgrade from the chest
-    for (const id of activeIds) {
-      const hSave = p.heroes[id];
-      const hDef = HERO_CATALOG[id];
-      if (hSave.weaponTier < maxGearTier) {
-        const nextTier = hSave.weaponTier + 1;
-        const itemName = hDef.weaponNames[nextTier - 1] ?? `Tier ${nextTier} Weapon`;
-        return {
-          chestTitle,
-          opened: false,
-          lootIcon: '⚔️',
-          lootTitle: itemName,
-          lootDetail: `${hDef.name}'s Weapon upgraded to Tier ${nextTier} for free!`,
-          bonusGold: 25,
-          bonusXp: 20,
-          upgradedHeroId: id,
-          upgradeType: 'weapon',
-        };
-      }
-      if (hSave.armorTier < maxGearTier) {
-        const nextTier = hSave.armorTier + 1;
-        const itemName = hDef.armorNames[nextTier - 1] ?? `Tier ${nextTier} Armor`;
-        return {
-          chestTitle,
-          opened: false,
-          lootIcon: '🛡️',
-          lootTitle: itemName,
-          lootDetail: `${hDef.name}'s Armor upgraded to Tier ${nextTier} for free!`,
-          bonusGold: 25,
-          bonusXp: 20,
-          upgradedHeroId: id,
-          upgradeType: 'armor',
-        };
-      }
+    if (roll < 0.05) {
+      lootTier = 'legendary';
+      multiplier = 3.0;
+      lootIcon = '🐉';
+      lootTitle = "Legendary Dragon's Hoard";
+    } else if (roll < 0.18) {
+      lootTier = 'epic';
+      multiplier = 2.25;
+      lootIcon = '👑';
+      lootTitle = 'Epic Sunforged Vault';
+    } else if (roll < 0.45) {
+      lootTier = 'rare';
+      multiplier = 1.75;
+      lootIcon = '💎';
+      lootTitle = 'Rare Gilded Strongbox';
+    } else if (roll < 0.75) {
+      lootTier = 'uncommon';
+      multiplier = 1.5;
+      lootIcon = '🧰';
+      lootTitle = 'Uncommon Ironbound Coffer';
+    } else {
+      lootTier = 'common';
+      multiplier = 1.25;
+      lootIcon = '🪙';
+      lootTitle = 'Common Merchant Satchel';
     }
 
-    // 2. Check if there is an unlocked Merchant Trinket not yet owned
-    const unownedTrinket = TRINKET_CATALOG.find(
-      (t) => !t.isBestInSlot && t.unlockStageIndex <= clearedIdx && !p.ownedTrinkets.includes(t.id),
-    );
-    if (unownedTrinket) {
-      return {
-        chestTitle,
-        opened: false,
-        lootIcon: unownedTrinket.icon,
-        lootTitle: unownedTrinket.name,
-        lootDetail: `Relic unlocked in Armory (${unownedTrinket.description})!`,
-        bonusGold: 30,
-        bonusXp: 25,
-        unlockedTrinketId: unownedTrinket.id,
-      };
-    }
+    const bonusGold = Math.max(25, Math.round(baseGold * (multiplier - 1)));
+    const bonusXp = Math.max(15, Math.round(baseXp * 0.25));
 
-    // 3. Fallback: Royal Gemstone & Valor Cache (grants immediate bonus Gold & Party XP!)
-    const bonusGold = Math.max(45, Math.round(stage.goldReward * 0.45));
-    const bonusXp = Math.max(35, Math.round(stage.xpReward * 0.45));
     return {
       chestTitle,
       opened: false,
-      lootIcon: '💎',
-      lootTitle: 'Royal Gemstone & Valor Cache',
-      lootDetail: `+${bonusGold} Bonus Gold & +${bonusXp} Bonus Party XP!`,
+      lootTier,
+      multiplier,
+      lootIcon,
+      lootTitle,
+      lootDetail: `${multiplier.toFixed(2)}x Gold Multiplier! (+${bonusGold} Bonus Gold & +${bonusXp} Party XP)`,
       bonusGold,
       bonusXp,
     };
@@ -526,20 +509,6 @@ export class GameStateService {
     if (loot.opened) return loot;
     const p = this.profile();
     const updatedHeroes = { ...p.heroes };
-    const nextOwnedTrinkets = [...p.ownedTrinkets];
-
-    if (loot.upgradedHeroId && updatedHeroes[loot.upgradedHeroId]) {
-      const h = updatedHeroes[loot.upgradedHeroId];
-      if (loot.upgradeType === 'weapon' && h.weaponTier < 7) {
-        updatedHeroes[loot.upgradedHeroId] = { ...h, weaponTier: h.weaponTier + 1 };
-      } else if (loot.upgradeType === 'armor' && h.armorTier < 7) {
-        updatedHeroes[loot.upgradedHeroId] = { ...h, armorTier: h.armorTier + 1 };
-      }
-    }
-
-    if (loot.unlockedTrinketId && !nextOwnedTrinkets.includes(loot.unlockedTrinketId)) {
-      nextOwnedTrinkets.push(loot.unlockedTrinketId);
-    }
 
     for (const id of this.allHeroIds) {
       const h = updatedHeroes[id];
@@ -556,7 +525,6 @@ export class GameStateService {
     this.commitProfile({
       ...p,
       gold: p.gold + loot.bonusGold,
-      ownedTrinkets: nextOwnedTrinkets,
       heroes: updatedHeroes,
     });
     this.audio.playCoin();
@@ -583,6 +551,7 @@ export class GameStateService {
     let lifesteal = 0;
     let cooldownMultiplier = 1.0;
     let regenPctPerSec = 0;
+    let threatMultiplier = def.threatMultiplier;
 
     // Apply unlocked skill tree passives & actives
     const activeSkills: SkillDefinition[] = [def.primaryActiveSkill];
@@ -611,9 +580,13 @@ export class GameStateService {
       // Passive stat modifiers
       switch (sk.id) {
         case 'fortified-plate':
+          maxHp *= 1.25;
+          defense += 5;
+          break;
         case 'crusader-aura':
           maxHp *= 1.25;
           defense += 5;
+          threatMultiplier = Number((threatMultiplier * 1.5).toFixed(2));
           break;
         case 'iron-body':
           // Monk's Phantom Reflexes: +12% permanent Dodge Chance, +20% Max HP & counter-attack on melee dodge
@@ -724,6 +697,7 @@ export class GameStateService {
       lifesteal: Number(lifesteal.toFixed(2)),
       cooldownMultiplier: Math.max(0.65, Number(cooldownMultiplier.toFixed(2))),
       regenPctPerSec,
+      threatMultiplier,
       activeSkills,
       weaponName: def.weaponNames[save.weaponTier - 1] ?? def.weaponNames[0],
       armorName: def.armorNames[save.armorTier - 1] ?? def.armorNames[0],

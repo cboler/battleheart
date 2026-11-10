@@ -185,6 +185,8 @@ export interface WarChestLoot {
   lootDetail: string;
   bonusGold: number;
   bonusXp: number;
+  lootTier?: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  multiplier?: number;
   upgradedHeroId?: HeroClassId;
   upgradeType?: 'weapon' | 'armor';
   unlockedTrinketId?: string;

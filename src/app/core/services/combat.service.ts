@@ -206,7 +206,7 @@ export class CombatService implements OnDestroy {
         counterOnDodge: h.counterOnDodge,
         lifesteal: h.lifesteal,
         threat: 0,
-        threatMultiplier: h.def.threatMultiplier,
+        threatMultiplier: h.threatMultiplier ?? h.def.threatMultiplier,
         skills: h.activeSkills.map((sk) => ({
           def: sk,
           cooldownRemaining: 0,
@@ -266,14 +266,15 @@ export class CombatService implements OnDestroy {
   public retreatOrCashOut(): void {
     const stage = this.activeStage();
     const kills = this.arenaKills();
-    if (stage?.isArena && kills > 0 && this.outcome() === 'ongoing') {
+    if (stage?.isArena && this.outcome() === 'ongoing') {
       this.outcome.set('victory');
+      this.isPaused.set(false);
       this.stopLoop();
       this.audio.playVictory();
 
-      const goldEarned = kills * 18;
-      const xpEarned = kills * 14;
-      const stars = kills >= 15 ? 3 : kills >= 8 ? 2 : 1;
+      const goldEarned = Math.max(25, kills * 20);
+      const xpEarned = Math.max(15, kills * 15);
+      const stars = kills >= 15 ? 3 : kills >= 8 ? 2 : kills >= 5 ? 1 : 1;
       const res = this.gameState.awardBattleRewards(stage, goldEarned, xpEarned, stars, kills);
       this.lastRewardSummary.set({
         gold: goldEarned,
@@ -553,7 +554,6 @@ export class CombatService implements OnDestroy {
         break;
       }
       case 'holy-nova':
-      case 'consecration':
       case 'chi-burst': {
         const dmg = Math.round(hero.attack * 2.0);
         const heal = Math.round(hero.attack * 1.7);
@@ -569,6 +569,27 @@ export class CombatService implements OnDestroy {
           this.applyHeal(al, heal, false);
         }
         this.addRing(hero.x, hero.y, 32, '#fde047');
+        this.audio.playSkillCast();
+        break;
+      }
+      case 'consecration': {
+        // Lady Valeria's Primary Holy Plate Tank Aggro Skill
+        const dmg = Math.round(hero.attack * 2.2);
+        const heal = Math.round(hero.attack * 1.8);
+        hero.threat += 280;
+        for (const en of livingEnemies) {
+          this.applyDamage(hero, en, dmg, true);
+          if (this.dist(hero, en) <= 40) {
+            en.targetUnitUid = hero.uid;
+            en.tankHoldTimer = 6.5;
+            en.aggroResetTimer = 7.5;
+          }
+        }
+        for (const al of livingAllies) {
+          this.applyHeal(al, heal, false);
+        }
+        this.addRing(hero.x, hero.y, 38, '#fbbf24');
+        this.addText(hero.x, hero.y - 8, '☀️ HOLY RADIANCE (TAUNT)!', '#fbbf24', true);
         this.audio.playSkillCast();
         break;
       }
@@ -662,7 +683,23 @@ export class CombatService implements OnDestroy {
         this.audio.playHeal();
         break;
       }
-      case 'Smite':
+      case 'Smite': {
+        const target = livingEnemies.find((e) => e.uid === hero.targetUnitUid) ?? livingEnemies[0];
+        if (target) {
+          this.applyDamage(hero, target, Math.round(hero.attack * 3.2), true);
+          target.stunTimer = 3.5;
+          hero.threat += 250;
+          for (const en of livingEnemies) {
+            en.targetUnitUid = hero.uid;
+            en.tankHoldTimer = 6.0;
+            en.aggroResetTimer = 7.0;
+          }
+          this.addText(target.x, target.y - 7, 'HAMMER OF JUSTICE (TAUNT)!', '#fbbf24', true);
+          this.addRing(target.x, target.y, 20, '#fbbf24');
+        }
+        this.audio.playFireball();
+        break;
+      }
       case 'palm-strike': {
         const target = livingEnemies.find((e) => e.uid === hero.targetUnitUid) ?? livingEnemies[0];
         if (target) {
@@ -1523,27 +1560,35 @@ export class CombatService implements OnDestroy {
         'skeleton-warrior',
         'dark-necromancer',
       ];
-      const count = Math.min(11, 3 + Math.floor(waveIdx * 0.75));
+      const count = Math.min(12, 3 + Math.floor(waveIdx * 0.8));
       for (let i = 0; i < count; i++) {
         const pick = pool[(waveIdx * 2 + i) % pool.length];
         this.pendingSpawns.push({
           enemyId: pick,
-          spawnAtElapsed: waveLeadDelay + i * Math.max(0.75, 1.3 - waveIdx * 0.04),
+          spawnAtElapsed: waveLeadDelay + i * Math.max(0.65, 1.25 - waveIdx * 0.045),
         });
       }
-      // Every 3rd Arena wave spawns a rotating Boss Champion (and dual bosses in deep waves!)
-      if ((waveIdx + 1) % 3 === 0) {
+      // Boss spawns: Starting at wave 2, spawns a rotating Boss Champion every 2nd wave!
+      // In deeper waves (wave 6+), spawn dual bosses; wave 12+, triple bosses!
+      if ((waveIdx + 1) % 2 === 0 || waveIdx >= 4) {
         const bossPool: EnemyId[] = ['king-slime', 'cave-troll', 'gorgon-queen', 'dragon-whelp'];
-        const bossPick = bossPool[Math.floor(waveIdx / 3) % bossPool.length];
+        const bossPick = bossPool[Math.floor(waveIdx / 2) % bossPool.length];
         this.pendingSpawns.push({
           enemyId: bossPick,
-          spawnAtElapsed: waveLeadDelay + 1.6,
+          spawnAtElapsed: waveLeadDelay + 1.2,
         });
-        if (waveIdx >= 11) {
-          const secondBoss = bossPool[(Math.floor(waveIdx / 3) + 1) % bossPool.length];
+        if (waveIdx >= 6) {
+          const secondBoss = bossPool[(Math.floor(waveIdx / 2) + 1) % bossPool.length];
           this.pendingSpawns.push({
             enemyId: secondBoss,
-            spawnAtElapsed: waveLeadDelay + 3.2,
+            spawnAtElapsed: waveLeadDelay + 2.5,
+          });
+        }
+        if (waveIdx >= 12) {
+          const thirdBoss = bossPool[(Math.floor(waveIdx / 2) + 2) % bossPool.length];
+          this.pendingSpawns.push({
+            enemyId: thirdBoss,
+            spawnAtElapsed: waveLeadDelay + 3.8,
           });
         }
       }
@@ -1572,9 +1617,9 @@ export class CombatService implements OnDestroy {
     const def = ENEMY_CATALOG[enemyId];
     const stage = this.activeStage();
     const w = this.waveIndex();
-    const waveScale = stage?.isArena ? Math.pow(1.18, w) + w * 0.08 : 1;
-    const arenaSpeedMult = stage?.isArena ? 1 + Math.min(0.35, w * 0.025) : 1;
-    const arenaCadenceDiv = stage?.isArena ? 1 + Math.min(0.6, w * 0.04) : 1;
+    const waveScale = stage?.isArena ? Math.pow(1.15, w) + w * 0.15 : 1;
+    const arenaSpeedMult = stage?.isArena ? 1 + Math.min(0.4, w * 0.03) : 1;
+    const arenaCadenceDiv = stage?.isArena ? 1 + Math.min(0.7, w * 0.05) : 1;
 
     const spawnY = 44 + ((offsetIdx * 13 + this.uidCounter * 7) % 38);
     const spawnX = 87 + (offsetIdx % 3) * 2.5;
@@ -1597,8 +1642,8 @@ export class CombatService implements OnDestroy {
       maxHp: Math.round(def.maxHp * waveScale),
       hp: Math.round(def.maxHp * waveScale),
       attack: Math.round(def.attack * waveScale),
-      defense: Math.round(def.defense * (stage?.isArena ? 1 + w * 0.08 : 1)),
-      precision: Math.min(0.48, (def.precision ?? 0.1) + (stage?.isArena ? w * 0.025 : 0)),
+      defense: Math.round(def.defense * (stage?.isArena ? 1 + w * 0.1 : 1)),
+      precision: Math.min(0.65, (def.precision ?? 0.1) + (stage?.isArena ? w * 0.035 : 0)),
       attackRange: def.attackRange,
       attackIntervalSec: Number((def.attackIntervalSec / arenaCadenceDiv).toFixed(2)),
       attackTimer: 0.6 + (offsetIdx % 3) * 0.25,
@@ -1611,7 +1656,10 @@ export class CombatService implements OnDestroy {
       skills: [],
       specialAbility: def.specialAbility,
       specialTimer: 0,
-      specialIntervalSec: def.specialIntervalSec ?? 8,
+      specialIntervalSec: Math.max(
+        3.8,
+        (def.specialIntervalSec ?? 8) - (stage?.isArena ? Math.min(3.5, w * 0.2) : 0),
+      ),
       shieldTimer: 0,
       evasionTimer: 0,
       weakenTimer: 0,
@@ -1644,18 +1692,21 @@ export class CombatService implements OnDestroy {
 
       // In Endless Arena, award gold & XP proportional to kills even on defeat
       const kills = this.arenaKills();
-      const goldEarned = stage.isArena ? kills * 18 : Math.round(stage.goldReward * 0.25);
-      const xpEarned = stage.isArena ? kills * 14 : Math.round(stage.xpReward * 0.25);
-      const res = this.gameState.awardBattleRewards(stage, goldEarned, xpEarned, 0, kills);
+      const goldEarned = stage.isArena
+        ? Math.max(25, kills * 20)
+        : Math.round(stage.goldReward * 0.25);
+      const xpEarned = stage.isArena ? Math.max(15, kills * 15) : Math.round(stage.xpReward * 0.25);
+      const stars = stage.isArena ? (kills >= 15 ? 3 : kills >= 8 ? 2 : kills >= 5 ? 1 : 0) : 0;
+      const res = this.gameState.awardBattleRewards(stage, goldEarned, xpEarned, stars, kills);
       this.lastRewardSummary.set({
         gold: goldEarned,
         xp: xpEarned,
-        stars: 0,
+        stars,
         leveledUpHeroes: res.leveledUpHeroes,
         bonusLootName: stage.isArena ? 'Colosseum Valor Purse' : 'Retreat Salvage Pouch',
         droppedRelicName: res.droppedRelicName,
         unlockedHeroName: res.unlockedHeroName,
-        warChest: null,
+        warChest: stage.isArena && kills >= 5 ? res.warChest : null,
       });
       return;
     }

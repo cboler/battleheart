@@ -10,7 +10,8 @@ import {
   ViewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
+import { filter, Subscription } from 'rxjs';
 import {
   ARMOR_TIERS,
   HERO_CATALOG,
@@ -45,6 +46,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   protected readonly combat = inject(CombatService);
   protected readonly audio = inject(AudioService);
   protected readonly gamepad = inject(GamepadService);
+  private readonly swUpdate = inject(SwUpdate, { optional: true });
 
   @ViewChild('arenaRef') private arenaRef?: ElementRef<HTMLElement>;
 
@@ -100,6 +102,17 @@ export class HomeComponent implements OnInit, OnDestroy {
   private gamepadSub?: Subscription;
 
   ngOnInit(): void {
+    if (this.swUpdate?.isEnabled) {
+      void this.swUpdate.checkForUpdate().catch((err: unknown) => {
+        console.debug('ServiceWorker update check skipped:', err);
+      });
+      this.swUpdate.versionUpdates
+        .pipe(filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'))
+        .subscribe(() => {
+          this.swUpdate?.activateUpdate().then(() => document.location.reload());
+        });
+    }
+
     this.gamepad.start();
     this.gamepadSub = this.gamepad.commands$.subscribe((cmd) => {
       if (!this.combat.isRunning()) return;

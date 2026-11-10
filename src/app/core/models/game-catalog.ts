@@ -1008,11 +1008,12 @@ export const HERO_CATALOG: Record<HeroClassId, HeroClassDefinition> = {
     attackRange: 11,
     attackIntervalSec: 1.75,
     moveSpeed: 11.5,
-    threatMultiplier: 2.3,
+    threatMultiplier: 2.8,
     primaryActiveSkill: {
       id: 'consecration',
       name: 'Holy Radiance',
-      description: 'Sears nearby enemies for 200% damage while healing the most injured ally.',
+      description:
+        'Taunts and sears all nearby foes with holy fire (+280 Threat, 6.5s lock) for 220% damage while radiating healing light to all allies.',
       icon: '☀️',
       isActive: true,
       cooldownSec: 11,
@@ -1034,7 +1035,8 @@ export const HERO_CATALOG: Record<HeroClassId, HeroClassDefinition> = {
         optionB: {
           id: 'Smite',
           name: 'Hammer of Justice',
-          description: 'Active: Crushes target enemy for 300% damage and stuns for 3.5s.',
+          description:
+            'Active: Crushes target enemy for 320% damage, stuns for 3.5s, and roars a holy challenge that draws all enemy aggro onto Valeria for 6s.',
           icon: '🔨',
           isActive: true,
           cooldownSec: 11,
@@ -1047,7 +1049,8 @@ export const HERO_CATALOG: Record<HeroClassId, HeroClassDefinition> = {
         optionA: {
           id: 'crusader-aura',
           name: 'Aura of Devotion',
-          description: 'Passive: Increases Max HP by +25% and Defense by +5.',
+          description:
+            'Passive: Increases Max HP by +25%, Defense by +5, and boosts Threat generation by +50%.',
           icon: '🛡️',
           isActive: false,
           effectType: 'passive',
